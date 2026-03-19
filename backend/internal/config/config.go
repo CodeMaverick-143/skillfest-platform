@@ -9,6 +9,7 @@ type Config struct {
 	GitHubClientSecret string
 	DatabaseURL        string
 	Port               string
+	JWTSecret          string
 }
 
 func LoadConfig() *Config {
@@ -17,6 +18,7 @@ func LoadConfig() *Config {
 		GitHubClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
 		DatabaseURL:        os.Getenv("DATABASE_URL"),
 		Port:               getEnv("PORT", "8080"),
+		JWTSecret:          getEnv("JWT_SECRET", "super-secret-key"),
 	}
 }
 
