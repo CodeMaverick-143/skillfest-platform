@@ -44,6 +44,19 @@ func (r *PostgresUserRepository) UpdatePoints(ctx context.Context, userID uuid.U
 	}).Error
 }
 
+func (r *PostgresUserRepository) GetByUsername(ctx context.Context, username string) (*model.User, error) {
+	var u model.User
+	err := r.db.WithContext(ctx).Where("username = ?", username).First(&u).Error
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (r *PostgresUserRepository) Update(ctx context.Context, user *model.User) error {
+	return r.db.WithContext(ctx).Save(user).Error
+}
+
 func (r *PostgresUserRepository) GetLeaderboard(ctx context.Context, limit int) ([]model.User, error) {
 	var users []model.User
 	err := r.db.WithContext(ctx).Order("points desc").Limit(limit).Find(&users).Error

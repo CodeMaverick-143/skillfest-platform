@@ -21,7 +21,7 @@ func (r *PostgresFresherRepository) CreateApplication(ctx context.Context, app *
 
 func (r *PostgresFresherRepository) ListApplications(ctx context.Context) ([]model.FresherApplication, error) {
 	var apps []model.FresherApplication
-	err := r.db.WithContext(ctx).Order("created_at desc").Find(&apps).Error
+	err := r.db.WithContext(ctx).Preload("User").Order("created_at desc").Find(&apps).Error
 	return apps, err
 }
 

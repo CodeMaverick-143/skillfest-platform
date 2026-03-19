@@ -23,7 +23,7 @@ func (s *PointsService) RecalculateUserLevel(ctx context.Context, userID uuid.UU
 
 	totalPoints := 0
 	for _, pr := range prs {
-		if pr.State == "merged" || pr.State == "closed" { 
+		if pr.State == "merged" { 
 			totalPoints += pr.Points
 		}
 	}
