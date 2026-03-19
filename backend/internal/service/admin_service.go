@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/repository"
 )
@@ -22,6 +23,6 @@ func (s *AdminService) ListApplications(ctx context.Context) ([]model.FresherApp
 	return s.fresherRepo.ListApplications(ctx)
 }
 
-func (s *AdminService) ReviewApplication(ctx context.Context, id string, status string) error {
+func (s *AdminService) ReviewApplication(ctx context.Context, id uuid.UUID, status string) error {
 	return s.fresherRepo.UpdateStatus(ctx, id, status)
 }

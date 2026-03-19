@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/repository"
 )
 
@@ -14,7 +15,7 @@ func NewPointsService(userRepo repository.UserRepository, prRepo repository.PRRe
 	return &PointsService{userRepo: userRepo, prRepo: prRepo}
 }
 
-func (s *PointsService) RecalculateUserLevel(ctx context.Context, userID string) error {
+func (s *PointsService) RecalculateUserLevel(ctx context.Context, userID uuid.UUID) error {
 	prs, err := s.prRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return err
@@ -22,7 +23,7 @@ func (s *PointsService) RecalculateUserLevel(ctx context.Context, userID string)
 
 	totalPoints := 0
 	for _, pr := range prs {
-		if pr.State == "merged" || pr.State == "closed" { // Simplified: should check labels for accepted
+		if pr.State == "merged" || pr.State == "closed" { 
 			totalPoints += pr.Points
 		}
 	}
