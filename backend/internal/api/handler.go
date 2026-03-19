@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"github.com/gorilla/mux"
+	"github.com/google/uuid"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/repository"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/service"
 )
@@ -39,13 +40,17 @@ func (s *Server) routes() {
 }
 
 func (s *Server) githubCallback(w http.ResponseWriter, r *http.Request) {
-	// Logic to exchange code and create session
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok", "message": "Auth implementation placeholder"})
 }
 
 func (s *Server) userDashboard(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	userID := vars["id"]
+	idStr := vars["id"]
+	userID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
 
 	user, err := s.userRepo.GetByID(r.Context(), userID)
 	if err != nil {

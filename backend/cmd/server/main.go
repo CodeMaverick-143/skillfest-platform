@@ -23,7 +23,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to DB: %v", err)
 	}
-	defer pool.Close()
+	sqlDB, _ := pool.DB()
+	defer sqlDB.Close()
 
 	// 2. Initialize Repositories
 	userRepo := postgres.NewPostgresUserRepository(pool)

@@ -2,53 +2,36 @@ package postgres
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
 )
 
 type PostgresPRRepository struct {
-	pool *pgxpool.Pool
+	db *gorm.DB
 }
 
-func NewPostgresPRRepository(pool *pgxpool.Pool) *PostgresPRRepository {
-	return &PostgresPRRepository{pool: pool}
+func NewPostgresPRRepository(db *gorm.DB) *PostgresPRRepository {
+	return &PostgresPRRepository{db: db}
 }
 
 func (r *PostgresPRRepository) CreateOrUpdate(ctx context.Context, pr *model.PullRequest) error {
-	query := `INSERT INTO pull_requests (user_id, repo_name, pr_number, title, url, state, difficulty, points, merged_at) 
-	          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-	          ON CONFLICT (repo_name, pr_number) DO UPDATE SET 
-	          state = EXCLUDED.state, title = EXCLUDED.title, points = EXCLUDED.points, merged_at = EXCLUDED.merged_at
-	          RETURNING id, created_at`
-	return r.pool.QueryRow(ctx, query, pr.UserID, pr.RepoName, pr.PRNumber, pr.Title, pr.URL, pr.State, pr.Difficulty, pr.Points, pr.MergedAt).
-		Scan(&pr.ID, &pr.CreatedAt)
+	return r.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "repo_name"}, {Name: "pr_number"}},
+		DoUpdates: clause.AssignmentColumns([]string{"state", "title", "points", "merged_at"}),
+	}).Create(pr).Error
 }
 
-func (r *PostgresPRRepository) GetByUserID(ctx context.Context, userID string) ([]model.PullRequest, error) {
-	query := `SELECT id, user_id, repo_name, pr_number, title, url, state, difficulty, points, created_at, merged_at 
-	          FROM pull_requests WHERE user_id = $1 ORDER BY created_at DESC`
-	rows, err := r.pool.Query(ctx, query, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
+func (r *PostgresPRRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]model.PullRequest, error) {
 	var prs []model.PullRequest
-	for rows.Next() {
-		var pr model.PullRequest
-		if err := rows.Scan(&pr.ID, &pr.UserID, &pr.RepoName, &pr.PRNumber, &pr.Title, &pr.URL, &pr.State, &pr.Difficulty, &pr.Points, &pr.CreatedAt, &pr.MergedAt); err != nil {
-			return nil, err
-		}
-		prs = append(prs, pr)
-	}
-	return prs, nil
+	err := r.db.WithContext(ctx).Where("user_id = ?", userID).Order("created_at desc").Find(&prs).Error
+	return prs, err
 }
 
 func (r *PostgresPRRepository) GetByRepoAndNumber(ctx context.Context, repo string, number int) (*model.PullRequest, error) {
 	var pr model.PullRequest
-	query := `SELECT id, user_id, repo_name, pr_number, title, url, state, difficulty, points, created_at, merged_at 
-	          FROM pull_requests WHERE repo_name = $1 AND pr_number = $2`
-	err := r.pool.QueryRow(ctx, query, repo, number).Scan(&pr.ID, &pr.UserID, &pr.RepoName, &pr.PRNumber, &pr.Title, &pr.URL, &pr.State, &pr.Difficulty, &pr.Points, &pr.CreatedAt, &pr.MergedAt)
+	err := r.db.WithContext(ctx).Where("repo_name = ? AND pr_number = ?", repo, number).First(&pr).Error
 	if err != nil {
 		return nil, err
 	}
