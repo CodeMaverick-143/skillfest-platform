@@ -8,13 +8,16 @@ import (
 
 type User struct {
 	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	GitHubID  string    `gorm:"uniqueIndex;not null" json:"github_id"`
-	Username  string    `gorm:"uniqueIndex;not null" json:"username"`
-	Email     string    `json:"email"`
-	Points    int       `gorm:"default:0" json:"points"`
-	Level     string    `gorm:"default:'Newcomer'" json:"level"`
-	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
-	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
+	GitHubID    string    `gorm:"column:github_id;uniqueIndex;not null" json:"github_id"`
+	Username    string    `gorm:"uniqueIndex;not null" json:"username"`
+	Email       string    `json:"email"`
+	AvatarURL   string    `json:"avatar_url"`
+	Points      int       `gorm:"default:0" json:"points"`
+	Level       string    `gorm:"default:'Newcomer'" json:"level"`
+	GitHubToken string    `gorm:"column:github_token" json:"github_token"`
+	IsEnrolled  bool      `gorm:"default:false" json:"is_enrolled"`
+	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
 type PullRequest struct {
@@ -26,6 +29,8 @@ type PullRequest struct {
 	URL         string     `gorm:"uniqueIndex;not null" json:"url"`
 	State       string     `gorm:"not null" json:"state"`
 	Difficulty  string     `json:"difficulty"`
+	Labels      string     `json:"labels"` // Comma-separated labels
+	IsOrg       bool       `gorm:"default:false" json:"is_org"`
 	Points      int        `gorm:"default:0" json:"points"`
 	CreatedAt   time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	MergedAt    *time.Time `json:"merged_at,omitempty"`
@@ -34,6 +39,7 @@ type PullRequest struct {
 type FresherApplication struct {
 	ID                uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	UserID            uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
+	User              User      `gorm:"foreignKey:UserID" json:"user"`
 	PortfolioURL      string    `json:"portfolio_url"`
 	ExperienceSummary string    `json:"experience_summary"`
 	Statement         string    `json:"statement"`

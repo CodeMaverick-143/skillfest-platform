@@ -7,7 +7,7 @@ import (
 )
 
 type Client struct {
-	ghClient *github.Client
+	GhClient *github.Client
 }
 
 func NewClient(ctx context.Context, accessToken string) *Client {
@@ -16,18 +16,18 @@ func NewClient(ctx context.Context, accessToken string) *Client {
 	)
 	tc := oauth2.NewClient(ctx, ts)
 	return &Client{
-		ghClient: github.NewClient(tc),
+		GhClient: github.NewClient(tc),
 	}
 }
 
 func (c *Client) GetUserPRs(ctx context.Context, username string) ([]*github.Issue, error) {
 	// Search for PRs authored by the user in the nst-sdc organization with skillfest topic/label
-	query := "is:pr author:" + username + " org:nst-sdc label:skillfest-accepted"
+	query := "is:pr author:" + username + " org:nst-sdc label:skillfest"
 	opts := &github.SearchOptions{
 		Sort: "created",
 		Order: "desc",
 	}
-	result, _, err := c.ghClient.Search.Issues(ctx, query, opts)
+	result, _, err := c.GhClient.Search.Issues(ctx, query, opts)
 	if err != nil {
 		return nil, err
 	}

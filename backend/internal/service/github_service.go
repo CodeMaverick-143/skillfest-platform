@@ -16,6 +16,10 @@ func NewGitHubService(client *github.Client) *GitHubService {
 	return &GitHubService{client: client}
 }
 
+func (s *GitHubService) GetClient() *github.Client {
+	return s.client
+}
+
 func (s *GitHubService) FetchAndValidatePRs(ctx context.Context, username string) ([]model.PullRequest, error) {
 	issues, err := s.client.GetUserPRs(ctx, username)
 	if err != nil {
@@ -33,31 +37,51 @@ func (s *GitHubService) FetchAndValidatePRs(ctx context.Context, username string
 		urlParts := strings.Split(*issue.RepositoryURL, "/")
 		repoName := urlParts[len(urlParts)-1]
 
-		// Check eligibility (e.g., specific labels or topics)
-		eligible := false
+		// Extract and format labels
+		var labels []string
+		difficulty := "easy" // default
+		points := 10        // default for skillfest label alone
+
 		for _, label := range issue.Labels {
-			if strings.ToLower(*label.Name) == "skillfest-accepted" {
-				eligible = true
-				break
+			name := strings.ToLower(*label.Name)
+			labels = append(labels, name)
+			
+			switch {
+			case strings.Contains(name, "hard"):
+				difficulty = "hard"
+				points = 50
+			case strings.Contains(name, "medium"):
+				difficulty = "medium"
+				points = 25
+			case strings.Contains(name, "easy"):
+				difficulty = "easy"
+				// points already 10
 			}
 		}
 
-		if eligible {
-			state := *issue.State
-			pr := model.PullRequest{
-				RepoName:   repoName,
-				PRNumber:   *issue.Number,
-				Title:      *issue.Title,
-				URL:        *issue.HTMLURL,
-				State:      state,
-				CreatedAt:  issue.GetCreatedAt().Time,
+		state := *issue.State
+		if state == "closed" && issue.PullRequestLinks != nil {
+			// Check if it was actually merged
+			prInfo, _, err := s.client.GhClient.PullRequests.Get(ctx, "nst-sdc", repoName, *issue.Number)
+			if err == nil && prInfo.GetMerged() {
+				state = "merged"
 			}
-			if state == "closed" {
-				// We'd need to check if it was merged, but for now simplify
-				// Real implementation would use GetPullRequest to get merged_at
-			}
-			validPRs = append(validPRs, pr)
 		}
+
+		pr := model.PullRequest{
+			RepoName:   repoName,
+			PRNumber:   *issue.Number,
+			Title:      *issue.Title,
+			URL:        *issue.HTMLURL,
+			State:      state,
+			Difficulty: difficulty,
+			Labels:     strings.Join(labels, ","),
+			Points:     points,
+			IsOrg:      true, // Since we search with org:nst-sdc
+			CreatedAt:  issue.GetCreatedAt().Time,
+		}
+		
+		validPRs = append(validPRs, pr)
 	}
 
 	return validPRs, nil

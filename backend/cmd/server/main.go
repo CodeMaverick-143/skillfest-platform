@@ -8,6 +8,7 @@ import (
 
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/api"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/config"
+	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/repository"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/repository/postgres"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/service"
@@ -23,6 +24,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to DB: %v", err)
 	}
+
+	// AutoMigrate models
+	if err := pool.AutoMigrate(&model.User{}, &model.PullRequest{}, &model.FresherApplication{}); err != nil {
+		log.Fatalf("Failed to migrate database: %v", err)
+	}
+
 	sqlDB, _ := pool.DB()
 	defer sqlDB.Close()
 
@@ -43,7 +50,7 @@ func main() {
 	go syncWorker.Start(ctx, 30*time.Minute)
 
 	// 5. Setup Server
-	srv := api.NewServer(userRepo, prRepo, authService, adminService)
+	srv := api.NewServer(cfg, userRepo, prRepo, authService, adminService, ghService)
 	log.Printf("Starting SkillFest Platform Backend on port %s...", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, srv.Router()); err != nil {
 		log.Fatalf("Server failed to start: %v", err)

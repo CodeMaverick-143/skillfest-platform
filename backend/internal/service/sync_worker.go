@@ -48,6 +48,11 @@ func (w *SyncWorker) runSync(ctx context.Context) {
 	}
 
 	for _, user := range users {
+		// Only sync for enrolled users
+		if !user.IsEnrolled {
+			continue
+		}
+
 		prs, err := w.githubService.FetchAndValidatePRs(ctx, user.Username)
 		if err != nil {
 			log.Printf("Sync error fetching PRs for user %s: %v", user.Username, err)
@@ -56,8 +61,7 @@ func (w *SyncWorker) runSync(ctx context.Context) {
 
 		for _, pr := range prs {
 			pr.UserID = user.ID
-			// Set points based on difficulty (placeholder logic)
-			pr.Points = 10 
+			// Points are now determined by the GitHubService based on labels
 			if err := w.prRepo.CreateOrUpdate(ctx, &pr); err != nil {
 				log.Printf("Sync error saving PR %s#%d: %v", pr.RepoName, pr.PRNumber, err)
 			}
