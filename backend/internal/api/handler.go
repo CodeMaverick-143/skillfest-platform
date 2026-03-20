@@ -52,10 +52,11 @@ func NewServer(cfg *config.Config, userRepo repository.UserRepository, prRepo re
 
 func (s *Server) Router() http.Handler {
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedOrigins:   []string{"http://localhost:3000", "http://127.0.0.1:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Authorization", "Content-Type"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"},
 		AllowCredentials: true,
+		Debug:            true,
 	})
 	return c.Handler(s.router)
 }
@@ -77,6 +78,7 @@ func (s *Server) routes() {
 	s.router.HandleFunc("/api/profile/{username}", s.getUserProfile).Methods("GET")
 	s.router.HandleFunc("/api/users/enroll", s.enrollUser).Methods("POST")
 	s.router.HandleFunc("/api/challenges", s.getChallenges).Methods("GET")
+	s.router.HandleFunc("/api/fresher/apply", s.submitFresherApplication).Methods("POST")
 }
 
 func (s *Server) githubLogin(w http.ResponseWriter, r *http.Request) {
@@ -142,7 +144,7 @@ func (s *Server) githubCallback(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   3600 * 72,
 	})
 
-	http.Redirect(w, r, fmt.Sprintf("http://localhost:3000/profile/%s", user.Username), http.StatusTemporaryRedirect)
+	http.Redirect(w, r, "http://localhost:3000/dashboard", http.StatusTemporaryRedirect)
 }
 
 func (s *Server) getCurrentUser(w http.ResponseWriter, r *http.Request) {
@@ -462,4 +464,49 @@ func (s *Server) getChallenges(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(challenges)
+}
+func (s *Server) submitFresherApplication(w http.ResponseWriter, r *http.Request) {
+	tokenString, err := r.Cookie("skillfest_token")
+	if err != nil {
+		authHeader := r.Header.Get("Authorization")
+		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+			tokenString = &http.Cookie{Value: authHeader[7:]}
+		} else {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	userID, err := s.authService.ValidateSession(tokenString.Value)
+	if err != nil {
+		http.Error(w, "Invalid session", http.StatusUnauthorized)
+		return
+	}
+
+	var req struct {
+		PortfolioURL      string `json:"portfolio_url"`
+		ExperienceSummary string `json:"experience_summary"`
+		Statement         string `json:"statement"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	app := &model.FresherApplication{
+		UserID:            userID,
+		PortfolioURL:      req.PortfolioURL,
+		ExperienceSummary: req.ExperienceSummary,
+		Statement:         req.Statement,
+		Status:            "Pending",
+	}
+
+	if err := s.adminService.SubmitApplication(r.Context(), app); err != nil {
+		http.Error(w, "Failed to submit application", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Application submitted successfully"})
 }
