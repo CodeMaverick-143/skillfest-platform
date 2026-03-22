@@ -13,6 +13,7 @@ interface User {
   level: string;
   rank?: number;
   is_enrolled: boolean;
+  is_admin: boolean;
 }
 
 interface AuthContextType {

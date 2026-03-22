@@ -1,59 +1,53 @@
+'use client';
+
+import { Github, Twitter, Mail, Zap, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import { Github, Twitter, Linkedin, Mail } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="bg-[#f6f8fa] border-t border-[#d0d7de] pt-16 pb-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-          <div className="col-span-1 md:col-span-2 space-y-6">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#238636] to-[#A371F7] flex items-center justify-center">
-                <span className="text-white text-xs font-bold italic">SF</span>
+    <footer className="border-t border-[var(--border)] bg-[var(--surface-1)] py-14">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-2 md:grid-cols-12 gap-8 mb-10">
+          <div className="col-span-2 md:col-span-5 space-y-4">
+            <Link href="/" className="inline-flex items-center gap-2">
+              <div className="w-7 h-7 rounded-md bg-[var(--accent)] text-[#06080f] flex items-center justify-center">
+                <Zap className="w-3.5 h-3.5 fill-current" />
               </div>
-              <span className="text-lg font-bold tracking-tight text-[#1a1a1a]">SkillFest 2026</span>
+              <span className="font-black text-sm tracking-tight text-white font-display">SKILL<span className="text-[var(--accent)]">FEST</span></span>
             </Link>
-            <p className="text-[#8b949e] max-w-sm">
-              Empowering the next generation of developers through open source contributions and mentorship.
+            <p className="text-slate-500 text-sm max-w-xs leading-relaxed">
+              The open source contribution engine for builders.
             </p>
-            <div className="flex gap-4">
-              <button className="p-2 rounded-lg bg-white border border-[#d0d7de] hover:border-[#238636] transition-colors">
-                <Github className="w-5 h-5 text-[#1a1a1a]" />
-              </button>
-              <button className="p-2 rounded-lg bg-white border border-[#d0d7de] hover:border-[#238636] transition-colors">
-                <Twitter className="w-5 h-5 text-[#1a1a1a]" />
-              </button>
-              <button className="p-2 rounded-lg bg-white border border-[#d0d7de] hover:border-[#238636] transition-colors">
-                <Mail className="w-5 h-5 text-[#1a1a1a]" />
-              </button>
+            <div className="flex gap-2">
+              {[Github, Twitter, Mail].map((Icon, i) => (
+                <Link key={i} href="#" className="w-8 h-8 rounded-lg bg-[var(--surface-2)] flex items-center justify-center text-slate-500 hover:text-white hover:bg-[var(--surface-3)] transition-all">
+                  <Icon className="w-3.5 h-3.5" />
+                </Link>
+              ))}
             </div>
           </div>
-
-          <div>
-            <h3 className="font-bold text-[#1a1a1a] mb-6">Program</h3>
-            <ul className="space-y-4 text-[#8b949e] text-sm font-medium">
-              <li><Link href="/rules" className="hover:text-[#238636] transition-colors">Event Rules</Link></li>
-              <li><Link href="/leaderboard" className="hover:text-[#238636] transition-colors">Global Leaderboard</Link></li>
-              <li><Link href="/fresher-application" className="hover:text-[#238636] transition-colors">Fresher Track</Link></li>
-              <li><Link href="/prizes" className="hover:text-[#238636] transition-colors">Rewards & Prizes</Link></li>
+          <div className="md:col-span-3 md:col-start-7">
+            <h4 className="text-[10px] font-semibold text-white uppercase tracking-[0.12em] mb-4">Platform</h4>
+            <ul className="space-y-2.5 text-sm text-slate-500">
+              {[["Rules", "/rules"], ["Projects", "/projects"], ["Leaderboard", "/leaderboard"], ["Apply", "/fresher-application"]].map(([n, h]) => (
+                <li key={n}><Link href={h} className="hover:text-white transition-colors">{n}</Link></li>
+              ))}
             </ul>
           </div>
-
-          <div>
-            <h3 className="font-bold text-[#1a1a1a] mb-6">Support</h3>
-            <ul className="space-y-4 text-[#8b949e] text-sm font-medium">
-              <li><Link href="/about" className="hover:text-[#238636] transition-colors">About Us</Link></li>
-              <li><Link href="/faq" className="hover:text-[#238636] transition-colors">FAQ</Link></li>
-              <li><Link href="/contact" className="hover:text-[#238636] transition-colors">Contact</Link></li>
-              <li><Link href="/privacy" className="hover:text-[#238636] transition-colors">Privacy Policy</Link></li>
+          <div className="md:col-span-3">
+            <h4 className="text-[10px] font-semibold text-white uppercase tracking-[0.12em] mb-4">Resources</h4>
+            <ul className="space-y-2.5 text-sm text-slate-500">
+              <li><Link href="#" className="hover:text-white transition-colors inline-flex items-center gap-1">GitHub Repo <ArrowUpRight className="w-3 h-3 opacity-40" /></Link></li>
+              <li><Link href="#" className="hover:text-white transition-colors">Documentation</Link></li>
             </ul>
           </div>
         </div>
-
-        <div className="pt-8 border-t border-[#d0d7de] text-center">
-          <p className="text-xs text-[#8b949e] font-medium">
-            © 2026 SkillFest. Powered by <span className="text-[#238636]">nst-sdc</span>. All rights reserved.
-          </p>
+        <div className="pt-6 border-t border-[var(--border)] flex flex-col sm:flex-row justify-between items-center gap-3 text-[11px] text-slate-500">
+          <p>© {new Date().getFullYear()} SkillFest · <span className="text-[var(--accent)]">nst-sdc</span></p>
+          <div className="flex gap-5">
+            <Link href="#" className="hover:text-white transition-colors">Privacy</Link>
+            <Link href="#" className="hover:text-white transition-colors">Terms</Link>
+          </div>
         </div>
       </div>
     </footer>

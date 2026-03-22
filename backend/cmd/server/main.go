@@ -27,7 +27,7 @@ func main() {
 	}
 
 	// AutoMigrate models
-	if err := pool.AutoMigrate(&model.User{}, &model.PullRequest{}, &model.FresherApplication{}); err != nil {
+	if err := pool.AutoMigrate(&model.User{}, &model.PullRequest{}, &model.FresherApplication{}, &model.Repository{}, &model.IssueAttempt{}); err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
 
@@ -38,6 +38,7 @@ func main() {
 	userRepo := postgres.NewPostgresUserRepository(pool)
 	prRepo := postgres.NewPostgresPRRepository(pool)
 	fresherRepo := postgres.NewPostgresFresherRepository(pool)
+	repoRepo := postgres.NewPostgresRepoRepository(pool)
 
 	// 3. Initialize Services
 	ghToken := cfg.GitHubClientSecret // Using ClientSecret as a fallback or assume a separate SYS_TOKEN exists
@@ -55,7 +56,7 @@ func main() {
 	go syncWorker.Start(ctx, 30*time.Minute)
 
 	// 5. Setup Server
-	srv := api.NewServer(cfg, userRepo, prRepo, authService, adminService, ghService, syncWorker)
+	srv := api.NewServer(cfg, userRepo, prRepo, repoRepo, authService, adminService, ghService, syncWorker)
 	log.Printf("Starting SkillFest Platform Backend on port %s...", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, srv.Router()); err != nil {
 		log.Fatalf("Server failed to start: %v", err)

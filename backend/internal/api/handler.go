@@ -26,23 +26,27 @@ type Server struct {
 	cfg           *config.Config
 	userRepo      repository.UserRepository
 	prRepo        repository.PRRepository
+	repoRepo      repository.RepositoryRepository
 	authService   *service.AuthService
 	adminService  *service.AdminService
 	githubService *service.GitHubService
 	syncWorker    *service.SyncWorker
 	oauthConfig   *oauth2.Config
+	frontendURL   string
 }
 
-func NewServer(cfg *config.Config, userRepo repository.UserRepository, prRepo repository.PRRepository, authService *service.AuthService, adminService *service.AdminService, githubService *service.GitHubService, syncWorker *service.SyncWorker) *Server {
+func NewServer(cfg *config.Config, userRepo repository.UserRepository, prRepo repository.PRRepository, repoRepo repository.RepositoryRepository, authService *service.AuthService, adminService *service.AdminService, githubService *service.GitHubService, syncWorker *service.SyncWorker) *Server {
 	s := &Server{
 		router:        mux.NewRouter(),
 		cfg:           cfg,
 		userRepo:      userRepo,
 		prRepo:        prRepo,
+		repoRepo:      repoRepo,
 		authService:   authService,
 		adminService:  adminService,
 		githubService: githubService,
 		syncWorker:    syncWorker,
+		frontendURL:   cfg.FrontendURL,
 		oauthConfig: &oauth2.Config{
 			ClientID:     cfg.GitHubClientID,
 			ClientSecret: cfg.GitHubClientSecret,
@@ -71,16 +75,28 @@ func (s *Server) routes() {
 	s.router.HandleFunc("/api/auth/github/callback", s.githubCallback).Methods("GET")
 	s.router.HandleFunc("/api/users/me", s.getCurrentUser).Methods("GET")
 	s.router.HandleFunc("/api/users/{id}/dashboard", s.userDashboard).Methods("GET")
+	
+	// Repository Management (Admin)
+	s.router.HandleFunc("/api/admin/repositories", s.adminMiddleware(s.listRepositories)).Methods("GET")
+	s.router.HandleFunc("/api/admin/repositories", s.adminMiddleware(s.addRepository)).Methods("POST")
+	s.router.HandleFunc("/api/admin/repositories/{id}", s.adminMiddleware(s.deleteRepository)).Methods("DELETE")
+
 	s.router.HandleFunc("/api/admin/applications", s.listApplications).Methods("GET")
 	s.router.HandleFunc("/api/admin/applications/{id}/status", s.updateApplicationStatus).Methods("POST")
 	s.router.HandleFunc("/api/admin/user-details", s.getUserDetails).Methods("GET")
 	s.router.HandleFunc("/api/admin/update-user-rank", s.updateUserRank).Methods("POST")
 	s.router.HandleFunc("/api/admin/leaderboard-settings", s.handleLeaderboardSettings).Methods("GET", "POST")
 	s.router.HandleFunc("/api/admin/initialize-leaderboard", s.handleLeaderboardSettings).Methods("GET", "POST")
+	
 	s.router.HandleFunc("/api/sync", s.syncStats).Methods("POST")
 	s.router.HandleFunc("/api/profile/{username}", s.getUserProfile).Methods("GET")
-	s.router.HandleFunc("/api/users/enroll", s.enrollUser).Methods("POST")
+	s.router.HandleFunc("/api/users/enroll", s.authMiddleware(s.enrollUser)).Methods("POST")
+	
+	// Issue Tracking
 	s.router.HandleFunc("/api/challenges", s.getChallenges).Methods("GET")
+	s.router.HandleFunc("/api/challenges/attempt", s.authMiddleware(s.attemptIssue)).Methods("POST")
+	s.router.HandleFunc("/api/challenges/user-attempts", s.authMiddleware(s.getUserAttempts)).Methods("GET")
+	
 	s.router.HandleFunc("/api/fresher/apply", s.submitFresherApplication).Methods("POST")
 }
 
@@ -420,13 +436,28 @@ func (s *Server) enrollUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getChallenges(w http.ResponseWriter, r *http.Request) {
-	// Search for issues with 'skillfest' label in nst-sdc org
-	query := "is:issue org:nst-sdc label:skillfest state:open"
+	repos, err := s.repoRepo.GetActiveRepositories(r.Context())
+	if err != nil {
+		http.Error(w, "Failed to fetch repositories", http.StatusInternalServerError)
+		return
+	}
+
+	repoQueries := ""
+	for _, repo := range repos {
+		repoQueries += fmt.Sprintf(" repo:%s/%s", repo.Owner, repo.Name)
+	}
+
+	if repoQueries == "" {
+		// Default to nst-sdc if no repos are configured
+		repoQueries = " org:nst-sdc"
+	}
+
+	query := "is:issue is:open label:skillfest" + repoQueries
 	opts := &github.SearchOptions{
-		Sort: "created",
+		Sort:  "created",
 		Order: "desc",
 	}
-	
+
 	result, _, err := s.githubService.GetClient().GhClient.Search.Issues(r.Context(), query, opts)
 	if err != nil {
 		http.Error(w, "Failed to fetch challenges from GitHub", http.StatusInternalServerError)
@@ -512,4 +543,112 @@ func (s *Server) submitFresherApplication(w http.ResponseWriter, r *http.Request
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Application submitted successfully"})
+}
+
+func (s *Server) listRepositories(w http.ResponseWriter, r *http.Request) {
+	repos, err := s.repoRepo.ListRepositories(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(repos)
+}
+
+func (s *Server) addRepository(w http.ResponseWriter, r *http.Request) {
+	var repo model.Repository
+	if err := json.NewDecoder(r.Body).Decode(&repo); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := s.repoRepo.CreateRepository(r.Context(), &repo); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (s *Server) deleteRepository(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+	if err := s.repoRepo.DeleteRepository(r.Context(), id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) attemptIssue(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(*model.User)
+	var req struct {
+		RepoID      uuid.UUID `json:"repo_id"`
+		IssueNumber int       `json:"issue_number"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	attempt := &model.IssueAttempt{
+		UserID:      user.ID,
+		RepoID:      req.RepoID,
+		IssueNumber: req.IssueNumber,
+		Status:      "Attempting",
+	}
+	if err := s.repoRepo.CreateAttempt(r.Context(), attempt); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (s *Server) getUserAttempts(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(*model.User)
+	attempts, err := s.repoRepo.GetUserAttempts(r.Context(), user.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(attempts)
+}
+
+func (s *Server) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		userID, err := s.authService.ValidateSession(token)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		user, err := s.userRepo.GetByID(r.Context(), userID)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "user", user)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	}
+}
+
+func (s *Server) adminMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return s.authMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		user := r.Context().Value("user").(*model.User)
+		if !user.IsAdmin {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

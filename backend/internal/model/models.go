@@ -17,6 +17,8 @@ type User struct {
 	GitHubToken string    `gorm:"column:github_token" json:"github_token"`
 	IsEnrolled  bool      `gorm:"default:false" json:"is_enrolled"`
 	IsHidden    bool      `gorm:"default:false" json:"is_hidden"`
+	IsAdmin     bool      `gorm:"default:false" json:"is_admin"`
+	Attempts    []IssueAttempt `gorm:"foreignKey:UserID" json:"attempts,omitempty"`
 	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
@@ -49,6 +51,24 @@ type FresherApplication struct {
 	UpdatedAt         time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
+type Repository struct {
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	Owner     string    `gorm:"uniqueIndex:idx_owner_repo;not null" json:"owner"`
+	Name      string    `gorm:"uniqueIndex:idx_owner_repo;not null" json:"name"`
+	IsActive  bool      `gorm:"default:true" json:"is_active"`
+	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+}
+
+type IssueAttempt struct {
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	UserID      uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
+	RepoID      uuid.UUID `gorm:"type:uuid;not null" json:"repo_id"`
+	IssueNumber int       `gorm:"not null" json:"issue_number"`
+	Status      string    `gorm:"default:'Attempting'" json:"status"` // Attempting, Submitted, Solved
+	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
+}
+
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	if u.ID == uuid.Nil {
 		u.ID = uuid.New()
@@ -66,6 +86,20 @@ func (pr *PullRequest) BeforeCreate(tx *gorm.DB) (err error) {
 func (app *FresherApplication) BeforeCreate(tx *gorm.DB) (err error) {
 	if app.ID == uuid.Nil {
 		app.ID = uuid.New()
+	}
+	return
+}
+
+func (r *Repository) BeforeCreate(tx *gorm.DB) (err error) {
+	if r.ID == uuid.Nil {
+		r.ID = uuid.New()
+	}
+	return
+}
+
+func (ia *IssueAttempt) BeforeCreate(tx *gorm.DB) (err error) {
+	if ia.ID == uuid.Nil {
+		ia.ID = uuid.New()
 	}
 	return
 }
