@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/api"
@@ -39,7 +40,11 @@ func main() {
 	fresherRepo := postgres.NewPostgresFresherRepository(pool)
 
 	// 3. Initialize Services
-	ghClient := github.NewClient(ctx, "PLACEHOLDER_TOKEN") // Token will come from OAuth
+	ghToken := cfg.GitHubClientSecret // Using ClientSecret as a fallback or assume a separate SYS_TOKEN exists
+	if t := os.Getenv("GITHUB_SYSTEM_TOKEN"); t != "" {
+		ghToken = t
+	}
+	ghClient := github.NewClient(ctx, ghToken)
 	ghService := service.NewGitHubService(ghClient)
 	authService := service.NewAuthService(cfg, userRepo)
 	pointsService := service.NewPointsService(userRepo, prRepo)
@@ -50,7 +55,7 @@ func main() {
 	go syncWorker.Start(ctx, 30*time.Minute)
 
 	// 5. Setup Server
-	srv := api.NewServer(cfg, userRepo, prRepo, authService, adminService, ghService)
+	srv := api.NewServer(cfg, userRepo, prRepo, authService, adminService, ghService, syncWorker)
 	log.Printf("Starting SkillFest Platform Backend on port %s...", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, srv.Router()); err != nil {
 		log.Fatalf("Server failed to start: %v", err)

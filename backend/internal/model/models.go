@@ -16,6 +16,7 @@ type User struct {
 	Level       string    `gorm:"default:'Newcomer'" json:"level"`
 	GitHubToken string    `gorm:"column:github_token" json:"github_token"`
 	IsEnrolled  bool      `gorm:"default:false" json:"is_enrolled"`
+	IsHidden    bool      `gorm:"default:false" json:"is_hidden"`
 	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
@@ -51,6 +52,20 @@ type FresherApplication struct {
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	if u.ID == uuid.Nil {
 		u.ID = uuid.New()
+	}
+	return
+}
+
+func (pr *PullRequest) BeforeCreate(tx *gorm.DB) (err error) {
+	if pr.ID == uuid.Nil {
+		pr.ID = uuid.New()
+	}
+	return
+}
+
+func (app *FresherApplication) BeforeCreate(tx *gorm.DB) (err error) {
+	if app.ID == uuid.Nil {
+		app.ID = uuid.New()
 	}
 	return
 }

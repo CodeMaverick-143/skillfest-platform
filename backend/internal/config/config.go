@@ -13,6 +13,8 @@ type Config struct {
 	DatabaseURL        string
 	Port               string
 	JWTSecret          string
+	FrontendURL        string
+	BackendURL         string
 }
 
 func LoadConfig() *Config {
@@ -26,6 +28,8 @@ func LoadConfig() *Config {
 		DatabaseURL:        os.Getenv("DATABASE_URL"),
 		Port:               getEnv("PORT", "8080"),
 		JWTSecret:          getEnv("JWT_SECRET", "super-secret-key"),
+		FrontendURL:        getEnv("FRONTEND_URL", "http://localhost:3000"),
+		BackendURL:         getEnv("BACKEND_URL", "http://localhost:8080"),
 	}
 }
 

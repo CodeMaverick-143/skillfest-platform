@@ -59,6 +59,6 @@ func (r *PostgresUserRepository) Update(ctx context.Context, user *model.User) e
 
 func (r *PostgresUserRepository) GetLeaderboard(ctx context.Context, limit int) ([]model.User, error) {
 	var users []model.User
-	err := r.db.WithContext(ctx).Order("points desc").Limit(limit).Find(&users).Error
+	err := r.db.WithContext(ctx).Where("is_hidden = ?", false).Order("points desc").Limit(limit).Find(&users).Error
 	return users, err
 }

@@ -33,12 +33,12 @@ func (w *SyncWorker) Start(ctx context.Context, interval time.Duration) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			w.runSync(ctx)
+			w.SyncAllUsers(ctx)
 		}
 	}
 }
 
-func (w *SyncWorker) runSync(ctx context.Context) {
+func (w *SyncWorker) SyncAllUsers(ctx context.Context) {
 	log.Println("Starting PR sync job...")
 	// In a real app, we'd paginate users
 	users, err := w.userRepo.GetLeaderboard(ctx, 1000)

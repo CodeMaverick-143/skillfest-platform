@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -22,26 +23,30 @@ import (
 
 type Server struct {
 	router        *mux.Router
+	cfg           *config.Config
 	userRepo      repository.UserRepository
 	prRepo        repository.PRRepository
 	authService   *service.AuthService
 	adminService  *service.AdminService
 	githubService *service.GitHubService
+	syncWorker    *service.SyncWorker
 	oauthConfig   *oauth2.Config
 }
 
-func NewServer(cfg *config.Config, userRepo repository.UserRepository, prRepo repository.PRRepository, authService *service.AuthService, adminService *service.AdminService, githubService *service.GitHubService) *Server {
+func NewServer(cfg *config.Config, userRepo repository.UserRepository, prRepo repository.PRRepository, authService *service.AuthService, adminService *service.AdminService, githubService *service.GitHubService, syncWorker *service.SyncWorker) *Server {
 	s := &Server{
 		router:        mux.NewRouter(),
+		cfg:           cfg,
 		userRepo:      userRepo,
 		prRepo:        prRepo,
 		authService:   authService,
 		adminService:  adminService,
 		githubService: githubService,
+		syncWorker:    syncWorker,
 		oauthConfig: &oauth2.Config{
 			ClientID:     cfg.GitHubClientID,
 			ClientSecret: cfg.GitHubClientSecret,
-			RedirectURL:  "http://localhost:8080/api/auth/github/callback",
+			RedirectURL:  cfg.BackendURL + "/api/auth/github/callback",
 			Endpoint:     gh_oauth.Endpoint,
 			Scopes:       []string{"user:email", "read:user"},
 		},
@@ -52,7 +57,7 @@ func NewServer(cfg *config.Config, userRepo repository.UserRepository, prRepo re
 
 func (s *Server) Router() http.Handler {
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "http://127.0.0.1:3000"},
+		AllowedOrigins:   []string{s.cfg.FrontendURL, "http://localhost:3000", "http://127.0.0.1:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"},
 		AllowCredentials: true,
@@ -71,8 +76,6 @@ func (s *Server) routes() {
 	s.router.HandleFunc("/api/admin/user-details", s.getUserDetails).Methods("GET")
 	s.router.HandleFunc("/api/admin/update-user-rank", s.updateUserRank).Methods("POST")
 	s.router.HandleFunc("/api/admin/leaderboard-settings", s.handleLeaderboardSettings).Methods("GET", "POST")
-	s.router.HandleFunc("/api/admin/recalculate-points", s.syncStats).Methods("POST")
-	s.router.HandleFunc("/api/admin/assign-top-ranks", s.assignTopRanks).Methods("POST")
 	s.router.HandleFunc("/api/admin/initialize-leaderboard", s.handleLeaderboardSettings).Methods("GET", "POST")
 	s.router.HandleFunc("/api/sync", s.syncStats).Methods("POST")
 	s.router.HandleFunc("/api/profile/{username}", s.getUserProfile).Methods("GET")
@@ -144,7 +147,7 @@ func (s *Server) githubCallback(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   3600 * 72,
 	})
 
-	http.Redirect(w, r, "http://localhost:3000/dashboard", http.StatusTemporaryRedirect)
+	http.Redirect(w, r, s.cfg.FrontendURL+"/dashboard", http.StatusTemporaryRedirect)
 }
 
 func (s *Server) getCurrentUser(w http.ResponseWriter, r *http.Request) {
@@ -345,7 +348,7 @@ func (s *Server) assignTopRanks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) syncStats(w http.ResponseWriter, r *http.Request) {
-	// Sync logic here
+	go s.syncWorker.SyncAllUsers(context.Background())
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "sync triggered"})
 }

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { getApiUrl } from '@/lib/api';
 
 interface User {
   id: string;
@@ -32,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   const fetchUser = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/api/users/me', {
+      const response = await fetch(getApiUrl('/api/users/me'), {
         credentials: 'include',
       });
       if (response.ok) {
@@ -54,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   }, []);
 
   const login = () => {
-    window.location.href = 'http://localhost:8080/api/auth/github';
+    window.location.href = getApiUrl('/api/auth/github');
   };
 
   const logout = () => {

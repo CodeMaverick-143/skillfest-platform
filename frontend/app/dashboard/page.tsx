@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getApiUrl } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
@@ -23,7 +24,7 @@ export default function DashboardPage() {
     if (user) {
       const fetchDashboard = async () => {
         try {
-          const response = await fetch(`http://localhost:8080/api/users/${user.id}/dashboard`, {
+          const response = await fetch(getApiUrl(`/api/users/${user.id}/dashboard`), {
             credentials: 'include'
           });
           if (response.ok) {

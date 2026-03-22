@@ -5,6 +5,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { getApiUrl } from "@/lib/api";
 
 export default function FresherApplicationPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -30,7 +31,7 @@ export default function FresherApplicationPage() {
     };
 
     try {
-      const response = await fetch('http://localhost:8080/api/fresher/apply', {
+      const response = await fetch(getApiUrl('/api/fresher/apply'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
