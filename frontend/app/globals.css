@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --card: #f6f8fa;
+  --card-foreground: #1a1a1a;
+  --primary: #238636;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #1a1a1a;
+  --muted: #8b949e;
+  --muted-foreground: #6b7280;
+  --accent: #f778ba;
+  --border: #d0d7de;
+  --radius: 0.75rem;
+}
+
+[data-theme="dark"] {
+  --background: #0d1117;
+  --foreground: #c9d1d9;
+  --card: #161b22;
+  --primary: #2ea043;
+  --border: #30363d;
+  --muted: #8b949e;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans);
+  overflow-x: hidden;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #238636 0%, #2ea043 50%, #A371F7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+}
