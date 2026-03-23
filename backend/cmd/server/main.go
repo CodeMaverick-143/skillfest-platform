@@ -41,10 +41,7 @@ func main() {
 	repoRepo := postgres.NewPostgresRepoRepository(pool)
 
 	// 3. Initialize Services
-	ghToken := cfg.GitHubClientSecret // Using ClientSecret as a fallback or assume a separate SYS_TOKEN exists
-	if t := os.Getenv("GITHUB_SYSTEM_TOKEN"); t != "" {
-		ghToken = t
-	}
+	ghToken := os.Getenv("GITHUB_SYSTEM_TOKEN")
 	ghClient := github.NewClient(ctx, ghToken)
 	ghService := service.NewGitHubService(ghClient)
 	authService := service.NewAuthService(cfg, userRepo)
