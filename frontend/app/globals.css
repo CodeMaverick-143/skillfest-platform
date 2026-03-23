@@ -1,31 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  /* ─── Core Palette ─── */
-  --background: #06080f;
-  --foreground: #e2e8f0;
+  /* ─── Core Palette (Beige Vibe) ─── */
+  --background: #FDFBF7;
+  --foreground: #1A1A1A;
   
-  /* Surface tiers – each step is clearly distinguishable */
-  --surface-1: #0d1117;
-  --surface-2: #151b27;
-  --surface-3: #1c2333;
-  --surface-4: #242d3d;
+  /* Surface tiers */
+  --surface-1: #F5F2EA;
+  --surface-2: #F0EDE4;
+  --surface-3: #EBE6DF;
+  --surface-4: #E1DBD2;
   
   /* Accents */
-  --accent: #00f0ff;
-  --accent-2: #8b5cf6;
+  --accent: #1A1A1A;
+  --accent-2: #8C867E;
   
   /* Borders */
-  --border: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.15);
+  --border: #EBE6DF;
+  --border-hover: #D6D0C4;
   
-  --radius: 1rem;
+  --radius: 0.5rem; /* modern sharp/slightly rounded */
 }
 
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 body {
@@ -58,15 +56,16 @@ h1, h2, h3, h4, .font-display {
 
 /* ──── Card ──── */
 .card {
-  background: var(--surface-2);
+  background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease-in-out;
 }
 
 .card:hover {
   border-color: var(--border-hover);
-  background: var(--surface-3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
 }
 
 /* ──── Gradient text ──── */
@@ -90,6 +89,6 @@ h1, h2, h3, h4, .font-display {
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 ::selection {
-  background: rgba(0, 240, 255, 0.2);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
 }
