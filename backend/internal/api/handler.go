@@ -76,6 +76,7 @@ func (s *Server) routes() {
 	s.router.HandleFunc("/api/users/me", s.getCurrentUser).Methods("GET")
 	s.router.HandleFunc("/api/users/{id}/dashboard", s.userDashboard).Methods("GET")
 	
+	s.router.HandleFunc("/api/leaderboard", s.leaderboard).Methods("GET")	
 	// Repository Management (Admin)
 	s.router.HandleFunc("/api/admin/repositories", s.adminMiddleware(s.listRepositories)).Methods("GET")
 	s.router.HandleFunc("/api/admin/repositories", s.adminMiddleware(s.addRepository)).Methods("POST")
@@ -407,23 +408,12 @@ func (s *Server) getUserProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) enrollUser(w http.ResponseWriter, r *http.Request) {
-	tokenString, err := r.Cookie("skillfest_token")
-	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	userVal := r.Context().Value("user")
+	if userVal == nil {
+		http.Error(w, "Unauthorized inside context", http.StatusUnauthorized)
 		return
 	}
-
-	userID, err := s.authService.ValidateSession(tokenString.Value)
-	if err != nil {
-		http.Error(w, "Invalid session", http.StatusUnauthorized)
-		return
-	}
-
-	user, err := s.userRepo.GetByID(r.Context(), userID)
-	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
+	user := userVal.(*model.User)
 
 	user.IsEnrolled = true
 	if err := s.userRepo.Update(r.Context(), user); err != nil {
@@ -618,13 +608,20 @@ func (s *Server) getUserAttempts(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
+		cookie, err := r.Cookie("skillfest_token")
+		var token string
+		if err == nil {
+			token = cookie.Value
+		} else {
+			authHeader := r.Header.Get("Authorization")
+			if len(authHeader) > 7 && strings.HasPrefix(authHeader, "Bearer ") {
+				token = authHeader[7:]
+			} else {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
 		}
 
-		token := strings.TrimPrefix(authHeader, "Bearer ")
 		userID, err := s.authService.ValidateSession(token)
 		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
