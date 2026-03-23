@@ -1,38 +1,53 @@
 'use client';
 
-import { Trophy, Search, Filter, ArrowUpRight, Star, Award, Medal } from "lucide-react";
+import { Trophy, Search, Filter, ArrowUpRight, Star, Medal } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+
+import { getApiUrl } from "@/lib/api";
 
 export default function LeaderboardPage() {
   const [filter, setFilter] = useState("All Levels");
   const [search, setSearch] = useState("");
   const [contributors, setContributors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/leaderboard');
-        if (response.ok) {
-          const data = await response.json();
-          // Map backend User model to frontend contributor format
-          const mapped = data.map((u: any, i: number) => ({
-            rank: i + 1,
-            username: u.username,
-            points: u.points,
-            prs: 0, // Backend needs to provide PR count if possible, or we fetch separately
-            level: u.level,
-            avatar: u.username.substring(0, 2).toUpperCase()
-          }));
-          setContributors(mapped);
+        const settingsRes = await fetch(getApiUrl("/api/admin/leaderboard-settings"));
+        if (settingsRes.ok) {
+          const settings = await settingsRes.json();
+          if (settings.visible === false) {
+            setVisible(false);
+            setLoading(false);
+            return;
+          }
         }
+
+        const res = await fetch(getApiUrl("/api/leaderboard"));
+        if (!res.ok) throw new Error("Failed to fetch leaderboard");
+        const data = await res.json();
+        
+        const mapped = Array.isArray(data) ? data.map((u: any, i: number) => ({
+          rank: i + 1,
+          username: u.username,
+          points: u.points,
+          prs: u.prs || 0, // Mock PRs if backend doesn't provide
+          level: u.level || "Newcomer",
+          avatar_url: u.avatar_url,
+          avatar: u.username.substring(0, 2).toUpperCase()
+        })) : [];
+        
+        setContributors(mapped);
       } catch (error) {
         console.error("Failed to fetch leaderboard:", error);
       } finally {
         setLoading(false);
       }
     };
+    
     fetchLeaderboard();
   }, []);
 
@@ -43,48 +58,58 @@ export default function LeaderboardPage() {
     c.username.toLowerCase().includes(search.toLowerCase())
   );
 
+  if (!visible) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#FDFBF7] text-[#1A1A1A] font-mono">
+        <Trophy className="w-12 h-12 text-[#8C867E] mb-6 opacity-50" />
+        <h2 className="text-[20px] font-bold text-[#1A1A1A] mb-4 tracking-widest uppercase">Leaderboard Hidden</h2>
+        <p className="text-[#6B6661] text-sm text-center max-w-sm">The public leaderboard is currently frozen by administration. Please check back later.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col min-h-screen bg-white">
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
+    <div className="flex flex-col min-h-screen bg-[#FDFBF7] text-[#1A1A1A] font-mono selection:bg-[#1A1A1A]/10 selection:text-black">
+      <main className="flex-1 max-w-7xl mx-auto px-6 py-16 md:py-32 w-full">
         <div className="space-y-12">
           {/* Header */}
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-6">
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="inline-flex p-3 rounded-2xl bg-[#238636]/10 text-[#238636] mb-4"
+              className="inline-flex p-4 rounded-2xl bg-[#F5F2EA] text-[#1A1A1A] mb-4 border border-[#EBE6DF] shadow-sm"
             >
-              <Trophy className="w-10 h-10" />
+              <Trophy className="w-10 h-10 text-[#8C867E]" />
             </motion.div>
-            <h1 className="text-4xl md:text-6xl font-black text-[#1a1a1a]">Global Leaderboard</h1>
-            <p className="text-[#8b949e] font-medium max-w-2xl mx-auto">
-              Celebrating the amazing developers contributing to SkillFest 2026. Top 15 performers earn exclusive physical schwag!
+            <h1 className="text-4xl md:text-6xl font-black font-sans tracking-tight text-[#1A1A1A]">Global Ranking</h1>
+            <p className="text-[#6B6661] font-medium max-w-2xl mx-auto">
+              Celebrating the amazing developers contributing to SkillFest.
             </p>
           </div>
 
           {/* Controls */}
-          <div className="flex flex-col md:flex-row gap-6 items-center justify-between bg-white border border-[#d0d7de] p-6 rounded-[2rem] shadow-sm">
+          <div className="flex flex-col md:flex-row gap-6 items-center justify-between p-6 rounded-2xl bg-[#F5F2EA] border border-[#EBE6DF] shadow-sm">
             <div className="relative w-full md:w-96 group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8b949e] group-focus-within:text-[#238636] transition-colors" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8C867E] group-focus-within:text-[#1A1A1A] transition-colors" />
               <input 
                 type="text" 
-                placeholder="Search contributors..."
-                className="w-full pl-12 pr-4 py-3 bg-[#f6f8fa] border border-[#d0d7de] rounded-xl focus:ring-2 focus:ring-[#238636]/20 focus:border-[#238636] outline-none transition-all font-medium"
+                placeholder="Search ranks..."
+                className="w-full pl-12 pr-4 py-3 bg-[#FDFBF7] border border-[#EBE6DF] rounded-xl focus:ring-1 focus:ring-[#1A1A1A] focus:border-[#1A1A1A] outline-none transition-all font-medium text-[#1A1A1A] placeholder-[#8C867E] font-sans"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 font-bold no-scrollbar">
-              <Filter className="w-5 h-5 text-[#8b949e] mr-2 flex-shrink-0" />
+            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 font-bold hide-scrollbar">
+              <Filter className="w-5 h-5 text-[#8C867E] mr-2 flex-shrink-0" />
               {levels.map(l => (
                 <button
                   key={l}
                   onClick={() => setFilter(l)}
                   className={`px-4 py-2 rounded-xl text-xs whitespace-nowrap transition-all border ${
                     filter === l 
-                      ? "bg-[#238636] text-white border-[#238636] shadow-md" 
-                      : "bg-white text-[#8b949e] border-[#d0d7de] hover:border-[#238636] hover:text-[#238636]"
+                      ? "bg-[#1A1A1A] text-white border-[#1A1A1A]" 
+                      : "bg-[#FDFBF7] text-[#6B6661] border-[#EBE6DF] hover:border-[#1A1A1A] hover:text-[#1A1A1A]"
                   }`}
                 >
                   {l}
@@ -94,81 +119,83 @@ export default function LeaderboardPage() {
           </div>
 
           {/* Table Container */}
-          <div className="bg-white border border-[#d0d7de] rounded-[2.5rem] overflow-hidden shadow-sm">
+          <div className="rounded-[2rem] overflow-hidden border border-[#EBE6DF] bg-[#FDFBF7] shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-[#f6f8fa] border-b border-[#d0d7de]">
-                    <th className="px-8 py-6 text-xs font-black text-[#8b949e] uppercase tracking-widest">Rank</th>
-                    <th className="px-8 py-6 text-xs font-black text-[#8b949e] uppercase tracking-widest">Contributor</th>
-                    <th className="px-8 py-6 text-xs font-black text-[#8b949e] uppercase tracking-widest">Points</th>
-                    <th className="px-8 py-6 text-xs font-black text-[#8b949e] uppercase tracking-widest text-center">PRs</th>
-                    <th className="px-8 py-6 text-xs font-black text-[#8b949e] uppercase tracking-widest">Level</th>
-                    <th className="px-8 py-6 text-xs font-black text-[#8b949e] uppercase tracking-widest"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#d0d7de]">
-                  {filteredContributors.map((c) => (
-                    <motion.tr 
-                      key={c.username}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className={`group hover:bg-[#f6f8fa]/50 transition-colors ${c.rank <= 15 ? 'bg-[#238636]/[0.02]' : ''}`}
-                    >
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-3">
-                          {c.rank === 1 && <Medal className="w-6 h-6 text-yellow-500" />}
-                          {c.rank === 2 && <Medal className="w-6 h-6 text-slate-400" />}
-                          {c.rank === 3 && <Medal className="w-6 h-6 text-amber-600" />}
-                          <span className={`text-lg font-black ${c.rank <= 3 ? 'text-[#1a1a1a]' : 'text-[#8b949e]'}`}>
-                            #{c.rank}
+              {loading ? (
+                <div className="p-12 text-center text-[#8C867E]">Loading ranks...</div>
+              ) : (
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#F5F2EA] border-b border-[#EBE6DF]">
+                      <th className="px-8 py-5 text-xs font-black text-[#8C867E] uppercase tracking-widest">Rank</th>
+                      <th className="px-8 py-5 text-xs font-black text-[#8C867E] uppercase tracking-widest">Contributor</th>
+                      <th className="px-8 py-5 text-xs font-black text-[#8C867E] uppercase tracking-widest">Points</th>
+                      <th className="px-8 py-5 text-xs font-black text-[#8C867E] uppercase tracking-widest text-center">PRs</th>
+                      <th className="px-8 py-5 text-xs font-black text-[#8C867E] uppercase tracking-widest">Level</th>
+                      <th className="px-8 py-5 text-xs font-black text-[#8C867E] uppercase tracking-widest"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#EBE6DF]">
+                    {filteredContributors.map((c) => (
+                      <motion.tr 
+                        key={c.username}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className={`group hover:bg-[#F5F2EA] transition-colors`}
+                      >
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-3">
+                            {c.rank === 1 && <Medal className="w-5 h-5 text-[#eab308]" />}
+                            {c.rank === 2 && <Medal className="w-5 h-5 text-[#A39D96]" />}
+                            {c.rank === 3 && <Medal className="w-5 h-5 text-[#D6D0C4]" />}
+                            <span className={`text-lg font-black ${c.rank <= 3 ? 'text-[#1A1A1A]' : 'text-[#8C867E]'}`}>
+                              #{c.rank}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white bg-[#1A1A1A] overflow-hidden`}>
+                              {c.avatar_url ? <img src={c.avatar_url} alt={c.username} className="w-full h-full object-cover" /> : c.avatar}
+                            </div>
+                            <div>
+                              <p className="font-bold text-[#1A1A1A] group-hover:text-[#6B6661] transition-colors">@{c.username}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-2">
+                            <Star className="w-4 h-4 text-[#8C867E]" />
+                            <span className="text-xl font-black text-[#1A1A1A]">{c.points.toLocaleString()}</span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5 text-center">
+                          <span className="px-3 py-1 rounded-lg bg-[#FDFBF7] border border-[#EBE6DF] font-bold text-[#1A1A1A]">
+                            {c.prs}
                           </span>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white shadow-sm transform group-hover:scale-110 transition-transform ${
-                            c.rank === 1 ? 'bg-yellow-500' : 
-                            c.rank === 2 ? 'bg-slate-400' : 
-                            c.rank === 3 ? 'bg-amber-600' : 'bg-gradient-to-br from-[#238636] to-[#A371F7]'
-                          }`}>
-                            {c.avatar}
-                          </div>
-                          <div>
-                            <p className="font-bold text-[#1a1a1a] group-hover:text-[#238636] transition-colors">@{c.username}</p>
-                            {c.rank <= 3 && <p className="text-[10px] font-black text-[#8b949e] uppercase tracking-tighter">🏆 Top Contributor</p>}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-2">
-                          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                          <span className="text-xl font-black text-[#1a1a1a]">{c.points.toLocaleString()}</span>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6 text-center">
-                        <span className="px-3 py-1 rounded-lg bg-[#f6f8fa] border border-[#d0d7de] font-bold text-[#1a1a1a]">
-                          {c.prs}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6">
-                        <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border ${
-                          c.level === 'Expert' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                          c.level === 'Advanced' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                          'bg-green-50 text-green-700 border-green-200'
-                        }`}>
-                          {c.level}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6">
-                        <button className="p-2 rounded-full hover:bg-white border border-transparent hover:border-[#d0d7de] shadow-none hover:shadow-sm transition-all text-[#8b949e] hover:text-[#238636]">
-                          <ArrowUpRight className="w-5 h-5" />
-                        </button>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
+                        </td>
+                        <td className="px-8 py-5">
+                          <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-[#EBE6DF] text-[#8C867E]`}>
+                            {c.level}
+                          </span>
+                        </td>
+                        <td className="px-8 py-5">
+                          <button className="p-2 rounded-full hover:bg-[#FDFBF7] border border-transparent hover:border-[#EBE6DF] transition-all text-[#8C867E] hover:text-[#1A1A1A]">
+                            <ArrowUpRight className="w-5 h-5" />
+                          </button>
+                        </td>
+                      </motion.tr>
+                    ))}
+                    {filteredContributors.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-8 py-10 text-center text-[#8C867E]">
+                          No contributors found for this filter.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>

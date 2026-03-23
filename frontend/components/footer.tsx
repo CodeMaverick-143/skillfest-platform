@@ -1,52 +1,52 @@
 'use client';
 
-import { Github, Twitter, Mail, Zap, ArrowUpRight } from "lucide-react";
+import { Github, Twitter, Mail, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="border-t border-[var(--border)] bg-[var(--surface-1)] py-14">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-2 md:grid-cols-12 gap-8 mb-10">
-          <div className="col-span-2 md:col-span-5 space-y-4">
+    <footer className="border-t border-[#EBE6DF] bg-[#FDFBF7] py-16 font-mono">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+          <div className="col-span-1 md:col-span-1 space-y-6">
             <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-7 h-7 rounded-md bg-[var(--accent)] text-[#06080f] flex items-center justify-center">
-                <Zap className="w-3.5 h-3.5 fill-current" />
-              </div>
-              <span className="font-black text-sm tracking-tight text-white font-display">SKILL<span className="text-[var(--accent)]">FEST</span></span>
+              <span className="font-bold text-sm tracking-widest text-[#8C867E] uppercase">SKILLFEST<span className="text-[#1A1A1A]">.</span></span>
             </Link>
-            <p className="text-slate-500 text-sm max-w-xs leading-relaxed">
+            <p className="text-[#6B6661] text-xs leading-relaxed max-w-xs">
               The open source contribution engine for builders.
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-4">
               {[Github, Twitter, Mail].map((Icon, i) => (
-                <Link key={i} href="#" className="w-8 h-8 rounded-lg bg-[var(--surface-2)] flex items-center justify-center text-slate-500 hover:text-white hover:bg-[var(--surface-3)] transition-all">
-                  <Icon className="w-3.5 h-3.5" />
+                <Link key={i} href="#" className="flex items-center justify-center text-[#6B6661] hover:text-[#1A1A1A] transition-colors">
+                  <Icon className="w-4 h-4" />
                 </Link>
               ))}
             </div>
           </div>
-          <div className="md:col-span-3 md:col-start-7">
-            <h4 className="text-[10px] font-semibold text-white uppercase tracking-[0.12em] mb-4">Platform</h4>
-            <ul className="space-y-2.5 text-sm text-slate-500">
+          
+          <div className="col-span-1">
+            <h4 className="text-[10px] font-bold text-[#1A1A1A] uppercase tracking-widest mb-6">Platform</h4>
+            <ul className="space-y-4 text-xs text-[#6B6661]">
               {[["Rules", "/rules"], ["Projects", "/projects"], ["Leaderboard", "/leaderboard"], ["Apply", "/fresher-application"]].map(([n, h]) => (
-                <li key={n}><Link href={h} className="hover:text-white transition-colors">{n}</Link></li>
+                <li key={n} className="flex items-center gap-2 group"><span className="text-[#C4BFAF] group-hover:text-[#1A1A1A] transition-colors">&gt;</span><Link href={h} className="hover:text-[#1A1A1A] transition-colors">{n}</Link></li>
               ))}
             </ul>
           </div>
-          <div className="md:col-span-3">
-            <h4 className="text-[10px] font-semibold text-white uppercase tracking-[0.12em] mb-4">Resources</h4>
-            <ul className="space-y-2.5 text-sm text-slate-500">
-              <li><Link href="#" className="hover:text-white transition-colors inline-flex items-center gap-1">GitHub Repo <ArrowUpRight className="w-3 h-3 opacity-40" /></Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">Documentation</Link></li>
+          
+          <div className="col-span-1">
+            <h4 className="text-[10px] font-bold text-[#1A1A1A] uppercase tracking-widest mb-6">Resources</h4>
+            <ul className="space-y-4 text-xs text-[#6B6661]">
+              <li className="flex items-center gap-2 group"><span className="text-[#C4BFAF] group-hover:text-[#1A1A1A] transition-colors">&gt;</span><Link href="#" className="hover:text-[#1A1A1A] transition-colors inline-flex items-center gap-2">GitHub Repo <ArrowUpRight className="w-3 h-3 text-[#A39D96]" /></Link></li>
+              <li className="flex items-center gap-2 group"><span className="text-[#C4BFAF] group-hover:text-[#1A1A1A] transition-colors">&gt;</span><Link href="#" className="hover:text-[#1A1A1A] transition-colors inline-flex items-center gap-2">Documentation</Link></li>
             </ul>
           </div>
         </div>
-        <div className="pt-6 border-t border-[var(--border)] flex flex-col sm:flex-row justify-between items-center gap-3 text-[11px] text-slate-500">
-          <p>© {new Date().getFullYear()} SkillFest · <span className="text-[var(--accent)]">nst-sdc</span></p>
-          <div className="flex gap-5">
-            <Link href="#" className="hover:text-white transition-colors">Privacy</Link>
-            <Link href="#" className="hover:text-white transition-colors">Terms</Link>
+        
+        <div className="pt-8 border-t border-[#EBE6DF] flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] font-bold tracking-widest uppercase text-[#8C867E]">
+          <p>© {new Date().getFullYear()} SKILLFEST · <span className="text-[#1A1A1A]">nst-sdc</span></p>
+          <div className="flex gap-8">
+            <Link href="#" className="hover:text-[#1A1A1A] transition-colors">Privacy</Link>
+            <Link href="#" className="hover:text-[#1A1A1A] transition-colors">Terms</Link>
           </div>
         </div>
       </div>

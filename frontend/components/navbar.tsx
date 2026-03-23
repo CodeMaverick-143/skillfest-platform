@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
-import { Github, Code, Database, LogOut, Layers, Zap, Menu, X, ChevronRight, BarChart3 } from "lucide-react";
+import { Github, Code, Database, LogOut, Layers, Menu, X, ChevronRight, BarChart3 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getApiUrl } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,36 +34,40 @@ export function Navbar() {
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "py-2" : "py-3"}`}>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className={`rounded-2xl px-4 sm:px-5 py-2.5 flex items-center justify-between transition-all duration-300 ${scrolled ? "bg-[var(--surface-1)]/90 backdrop-blur-xl border border-[var(--border)] shadow-lg shadow-black/30" : "bg-transparent"}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 font-mono ${scrolled ? "py-2 bg-[#FDFBF7]/90 backdrop-blur-xl border-b border-[#EBE6DF] shadow-sm" : "py-4 bg-transparent"}`}>
+        <div className="w-full max-w-7xl mx-auto px-6">
+          <div className="flex items-center justify-between">
 
-            <Link href="/" className="flex items-center gap-2 shrink-0">
-              <div className="w-7 h-7 rounded-md bg-[var(--accent)] text-[#06080f] flex items-center justify-center">
-                <Zap className="w-3.5 h-3.5 fill-current" />
-              </div>
-              <span className="font-black text-sm tracking-tight text-white font-display">SKILL<span className="text-[var(--accent)]">FEST</span></span>
-            </Link>
+            {/* Logo area */}
+            <div className="flex items-center justify-start flex-1 min-w-0">
+              <Link href="/" className="flex items-center gap-2 shrink-0 group">
+                <span className="font-bold text-sm tracking-widest text-[#1A1A1A] uppercase flex items-center gap-1.5 md:gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#1A1A1A] group-hover:bg-[#8C867E] transition-colors" /> SKILLFEST<span className="text-[#8C867E]">.</span>
+                </span>
+              </Link>
+            </div>
 
-            <div className="hidden md:flex items-center gap-0.5">
+            {/* Centered Links */}
+            <div className="hidden md:flex items-center justify-center gap-6">
               {links.map((l) => (
-                <Link key={l.name} href={l.href} className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-slate-400 hover:text-white hover:bg-[var(--surface-3)] transition-all">
+                <Link key={l.name} href={l.href} className="text-[12px] font-bold tracking-widest uppercase text-[#8C867E] hover:text-[#1A1A1A] transition-colors">
                   {l.name}
                 </Link>
               ))}
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Right actions */}
+            <div className="flex items-center justify-end gap-4 flex-1">
               {user ? (
-                <div className="flex items-center gap-2">
-                  <span className="hidden lg:block text-[11px] font-semibold text-slate-400">{user.username}</span>
+                <div className="flex items-center gap-4">
+                  <span className="hidden lg:block text-[11px] font-bold tracking-widest text-[#8C867E]">{user.username}</span>
                   <div className="relative group/u">
-                    <button className="w-8 h-8 rounded-lg overflow-hidden border border-[var(--border)] hover:border-[var(--accent)]/30 transition-all">
-                      <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                    <button className="w-8 h-8 rounded overflow-hidden border border-[#D6D0C4] hover:border-[#1A1A1A] transition-all shadow-sm">
+                      <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover grayscale opacity-90 hover:grayscale-0 hover:opacity-100 transition-all" />
                     </button>
                     <div className="absolute right-0 top-full mt-2 w-40 opacity-0 invisible group-hover/u:opacity-100 group-hover/u:visible transition-all">
-                      <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-xl p-1 shadow-xl">
-                        <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-red-400 hover:bg-red-500/10 text-[11px] font-semibold transition-colors">
+                      <div className="bg-[#F5F2EA] border border-[#EBE6DF] p-1 shadow-md">
+                        <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-2 text-[#6B6661] hover:text-[#1A1A1A] hover:bg-[#EBE6DF] text-[11px] font-bold tracking-widest uppercase transition-colors rounded-sm">
                           <LogOut className="w-3.5 h-3.5" /> Sign Out
                         </button>
                       </div>
@@ -71,12 +75,12 @@ export function Navbar() {
                   </div>
                 </div>
               ) : (
-                <Link href={getApiUrl("/api/auth/github")} className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--accent)] text-[#06080f] font-bold text-[11px] hover:brightness-110 transition-all">
+                <Link href={getApiUrl("/api/auth/github")} className="hidden sm:flex items-center gap-2 px-4 py-2 bg-[#1A1A1A] text-white font-bold text-[11px] tracking-widest uppercase hover:bg-[#333] transition-colors rounded shadow-sm">
                   <Github className="w-3.5 h-3.5" /> Sign In
                 </Link>
               )}
-              <button onClick={() => setMobileOpen(o => !o)} className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-[var(--surface-3)] transition-all">
-                {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              <button onClick={() => setMobileOpen(o => !o)} className="md:hidden w-8 h-8 flex items-center justify-end text-[#8C867E] hover:text-[#1A1A1A] transition-colors">
+                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
           </div>
@@ -85,23 +89,23 @@ export function Navbar() {
 
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" onClick={closeMobile}>
-            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 300 }} onClick={e => e.stopPropagation()} className="absolute right-0 top-0 bottom-0 w-64 bg-[var(--surface-1)] border-l border-[var(--border)] p-5 flex flex-col">
-              <div className="flex items-center justify-between mb-8">
-                <span className="font-black text-sm text-white font-display">SKILL<span className="text-[var(--accent)]">FEST</span></span>
-                <button onClick={closeMobile} className="text-slate-400 hover:text-white"><X className="w-4 h-4" /></button>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-[#FDFBF7]/80 backdrop-blur-sm md:hidden font-mono" onClick={closeMobile}>
+            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 300 }} onClick={e => e.stopPropagation()} className="absolute right-0 top-0 bottom-0 w-72 bg-[#F5F2EA] border-l border-[#EBE6DF] p-6 flex flex-col shadow-2xl">
+              <div className="flex items-center justify-between mb-12">
+                <span className="font-bold text-sm tracking-widest text-[#1A1A1A] uppercase">SKILLFEST<span className="text-[#8C867E]">.</span></span>
+                <button onClick={closeMobile} className="text-[#8C867E] hover:text-[#1A1A1A]"><X className="w-5 h-5" /></button>
               </div>
-              <div className="flex flex-col gap-0.5 flex-1">
+              <div className="flex flex-col gap-2 flex-1">
                 {links.map((l) => (
-                  <Link key={l.name} href={l.href} onClick={closeMobile} className="flex items-center justify-between px-3 py-3 rounded-lg text-sm font-semibold text-slate-300 hover:text-white hover:bg-[var(--surface-3)] transition-all">
-                    <span className="flex items-center gap-2.5"><l.icon className="w-4 h-4 opacity-40" />{l.name}</span>
-                    <ChevronRight className="w-3 h-3 opacity-20" />
+                  <Link key={l.name} href={l.href} onClick={closeMobile} className="flex items-center justify-between px-4 py-3 text-[12px] font-bold tracking-widest uppercase text-[#8C867E] hover:text-[#1A1A1A] hover:bg-[#EBE6DF] transition-colors rounded">
+                    {l.name}
+                    <ChevronRight className="w-3 h-3 opacity-50" />
                   </Link>
                 ))}
               </div>
               {!user && (
-                <Link href={getApiUrl("/api/auth/github")} onClick={closeMobile} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-[var(--accent)] text-[#06080f] font-bold text-sm mt-4">
-                  <Github className="w-4 h-4" /> Sign in with GitHub
+                <Link href={getApiUrl("/api/auth/github")} onClick={closeMobile} className="flex items-center justify-center gap-2 px-4 py-4 bg-[#1A1A1A] text-white font-bold text-[11px] tracking-widest uppercase mt-4 rounded shadow-sm">
+                  <Github className="w-4 h-4" /> Sign In
                 </Link>
               )}
             </motion.div>
