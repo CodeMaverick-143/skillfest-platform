@@ -1,8 +1,8 @@
 'use client';
 
-import { Github, Send, Info, CheckCircle2, User, Mail, Link as LinkIcon, Briefcase, Zap } from "lucide-react";
+import { Github, Send, Info, CheckCircle2, User, Mail, Link as LinkIcon, Briefcase, Zap, ArrowRight, Loader } from "lucide-react";
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { getApiUrl } from "@/lib/api";
@@ -55,26 +55,26 @@ export default function FresherApplicationPage() {
 
   if (submitted) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white px-4">
+      <div className="flex items-center justify-center min-h-screen bg-[#FDFBF7] px-4 font-mono">
         <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full text-center space-y-8 bg-[#f6f8fa] border border-[#d0d7de] p-12 rounded-[3rem] shadow-xl"
+          className="max-w-md w-full text-center space-y-12 bg-white border border-[#EBE6DF] p-12 shadow-xl shadow-black/5"
         >
-          <div className="w-24 h-24 bg-[#238636] rounded-full flex items-center justify-center mx-auto shadow-lg shadow-[#238636]/20">
-            <CheckCircle2 className="w-12 h-12 text-white" />
+          <div className="w-20 h-20 bg-[#F5F2EA] border border-[#EBE6DF] flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-10 h-10 text-[#1A1A1A]" />
           </div>
           <div className="space-y-4">
-            <h1 className="text-3xl font-black text-[#1a1a1a]">Application Sent!</h1>
-            <p className="text-[#8b949e] font-medium leading-relaxed">
-              Thank you for applying to the SkillFest 2026 Fresher Developer Program. Our team will review your profile and get back to you via email within 5-7 business days.
+            <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A] font-sans">Application Sent!</h1>
+            <p className="text-[#8C867E] text-[13px] leading-relaxed">
+              Thank you for applying to the SkillFest 2026 Fresher Track. Our team will review your profile and get back to you via email within 5-7 business days.
             </p>
           </div>
           <button 
             onClick={() => window.location.href = '/'}
-            className="w-full py-4 bg-[#1a1a1a] text-white font-bold rounded-2xl hover:bg-[#238636] transition-all shadow-md active:scale-95"
+            className="w-full py-4 bg-[#1A1A1A] text-white font-bold text-[11px] tracking-widest uppercase hover:bg-[#333] transition-all flex items-center justify-center gap-2"
           >
-            Back to Home
+            Return to Home <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </motion.div>
       </div>
@@ -82,98 +82,129 @@ export default function FresherApplicationPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
-      <main className="flex-1 py-20 px-4">
-        <div className="max-w-3xl mx-auto space-y-12">
-          {/* Header */}
-          <div className="text-center space-y-4">
-            <div className="inline-flex p-3 rounded-2xl bg-[#A371F7]/10 text-[#A371F7] mb-4">
-              <Zap className="w-10 h-10" />
-            </div>
-            <h1 className="text-4xl md:text-6xl font-black text-[#1a1a1a]">Apply for Fresher Track</h1>
-            <p className="text-[#8b949e] font-medium text-lg max-w-2xl mx-auto">
-              Kickstart your career within the SkillFest ecosystem. Fill out the application below to join our mentorship program.
-            </p>
+    <div className="min-h-screen bg-[#FDFBF7] py-32 px-6 font-mono text-[#1A1A1A] selection:bg-[#1A1A1A]/10 selection:text-black">
+      <main className="max-w-5xl mx-auto flex flex-col items-center">
+        
+        {/* Header Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-8 max-w-2xl mb-16"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-[#F5F2EA] border border-[#EBE6DF] text-[#6B6661] text-[10px] font-bold tracking-widest uppercase shadow-sm mx-auto">
+            <span className="text-[#1A1A1A]">&gt;_</span> Recruitment
           </div>
+          <h1 className="text-[40px] md:text-[56px] font-bold leading-[1.05] tracking-tight text-[#1A1A1A] font-sans">
+            <span className="text-[#8C867E] font-normal">&gt;</span>Fresher Track<span className="animate-pulse font-normal">_</span>
+          </h1>
+          <p className="text-[#6B6661] font-sans text-base leading-[1.7] font-medium mx-auto">
+            Kickstart your career within the SkillFest ecosystem. Fill out the application below to join our mentorship program.
+          </p>
+        </motion.div>
 
-          {/* Form */}
-          <div className="bg-white border border-[#d0d7de] p-8 md:p-12 rounded-[2.5rem] shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-[#A371F7]" />
+        {/* Application Form Container */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="w-full max-w-2xl bg-white border border-[#EBE6DF] p-8 md:p-12 shadow-sm hover:border-[#D6D0C4] transition-colors"
+        >
+          <form onSubmit={handleSubmit} className="space-y-12">
             
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <InputGroup 
-                  label="GitHub Profile URL" 
-                  icon={<Github className="w-5 h-5" />} 
-                  placeholder="https://github.com/username"
-                  name="github_url"
-                  required
-                  defaultValue={user ? `https://github.com/${user.username}` : ""}
-                />
-                <InputGroup 
-                  label="Experience Level" 
-                  icon={<Briefcase className="w-5 h-5" />} 
-                  placeholder="e.g., 0-1 years, Student"
-                  name="experience_summary"
-                  required
-                />
-              </div>
+            {/* Form Fields Section 1 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <InputGroup 
+                label="GitHub Profile URL" 
+                icon={<Github className="w-3.5 h-3.5" />} 
+                placeholder="https://github.com/username"
+                name="github_url"
+                required
+                defaultValue={user ? `https://github.com/${user.username}` : ""}
+              />
+              <InputGroup 
+                label="Experience Level" 
+                icon={<Briefcase className="w-3.5 h-3.5" />} 
+                placeholder="e.g., Student, 0-1 years"
+                name="experience_summary"
+                required
+              />
+            </div>
 
-              <div className="space-y-3">
-                <label className="text-sm font-black text-[#1a1a1a] flex items-center gap-2 px-1">
-                  <LinkIcon className="w-4 h-4 text-[#A371F7]" />
-                  Portfolio Link(s)
-                </label>
-                <textarea 
-                  name="portfolio_url"
-                  className="w-full px-6 py-4 bg-[#f6f8fa] border border-[#d0d7de] rounded-2xl focus:ring-2 focus:ring-[#A371F7]/20 focus:border-[#A371F7] outline-none transition-all font-medium min-h-[120px]"
-                  placeholder="Personal website, projects, Behance, etc."
-                  required
-                />
-              </div>
+            {/* Form Fields Section 2 */}
+            <div className="space-y-4">
+              <label className="text-[11px] font-bold text-[#1A1A1A] tracking-widest uppercase flex items-center gap-2">
+                <LinkIcon className="w-3.5 h-3.5" />
+                Portfolio Link(s)
+              </label>
+              <textarea 
+                name="portfolio_url"
+                className="w-full px-6 py-4 bg-[#F5F2EA]/30 border border-[#EBE6DF] focus:border-[#1A1A1A] outline-none transition-all text-[13px] leading-relaxed min-h-[120px]"
+                placeholder="Personal website, projects, Behance, etc."
+                required
+              />
+            </div>
 
-              <div className="space-y-3">
-                <label className="text-sm font-black text-[#1a1a1a] flex items-center gap-2 px-1">
-                  <Info className="w-4 h-4 text-[#A371F7]" />
-                  Why do you want to join SkillFest?
-                </label>
-                <textarea 
-                  name="statement"
-                  className="w-full px-6 py-4 bg-[#f6f8fa] border border-[#d0d7de] rounded-2xl focus:ring-2 focus:ring-[#A371F7]/20 focus:border-[#A371F7] outline-none transition-all font-medium min-h-[160px]"
-                  placeholder="Tell us about your passion for open source and what you hope to achieve..."
-                  required
-                />
-              </div>
+            {/* Form Fields Section 3 */}
+            <div className="space-y-4">
+              <label className="text-[11px] font-bold text-[#1A1A1A] tracking-widest uppercase flex items-center gap-2">
+                <Info className="w-3.5 h-3.5" />
+                Why SkillFest?
+              </label>
+              <textarea 
+                name="statement"
+                className="w-full px-6 py-4 bg-[#F5F2EA]/30 border border-[#EBE6DF] focus:border-[#1A1A1A] outline-none transition-all text-[13px] leading-relaxed min-h-[160px]"
+                placeholder="Tell us about your passion for open source and what you hope to achieve..."
+                required
+              />
+            </div>
 
-              <div className="flex items-start gap-3 px-2">
-                <input 
-                  type="checkbox" 
-                  id="rules" 
-                  className="mt-1 w-5 h-5 rounded border-[#d0d7de] text-[#A371F7] focus:ring-[#A371F7]" 
-                  required
-                />
-                <label htmlFor="rules" className="text-sm font-medium text-[#8b949e]">
-                  I agree to the <Link href="/rules" className="text-[#A371F7] underline">event rules and terms</Link>. I confirm that the information provided is accurate and all profile links belong to me.
-                </label>
-              </div>
+            {/* Rules Check */}
+            <div className="flex items-start gap-3">
+              <input 
+                type="checkbox" 
+                id="rules" 
+                className="mt-1 w-4 h-4 rounded-none border-[#EBE6DF] text-[#1A1A1A] focus:ring-[#1A1A1A]" 
+                required
+              />
+              <label htmlFor="rules" className="text-[11px] font-medium text-[#8C867E] leading-relaxed uppercase tracking-wider">
+                I agree to the <Link href="/rules" className="text-[#1A1A1A] underline font-bold">event rules and terms</Link> and confirm all info is accurate.
+              </label>
+            </div>
 
+            {/* Error Message */}
+            <AnimatePresence>
               {error && (
-                <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm font-bold">
-                  {error}
-                </div>
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="p-4 bg-red-50 border border-red-100 text-red-600 text-[11px] font-bold uppercase tracking-widest"
+                >
+                  &gt; ERROR: {error}
+                </motion.div>
               )}
+            </AnimatePresence>
 
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="w-full py-5 bg-[#A371F7] hover:bg-[#8b5cf6] text-white font-bold rounded-2xl transition-all shadow-xl flex items-center justify-center gap-3 text-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? "Submitting..." : "Submit Application"}
-                <Send className="w-5 h-5 text-current" />
-              </button>
-            </form>
-          </div>
-        </div>
+            {/* Submit Button */}
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full py-5 bg-[#1A1A1A] hover:bg-[#333] text-white font-bold text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group"
+            >
+              {loading ? (
+                <>
+                  <Loader className="w-4 h-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  Submit Application
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </button>
+          </form>
+        </motion.div>
       </main>
     </div>
   );
@@ -181,16 +212,16 @@ export default function FresherApplicationPage() {
 
 function InputGroup({ label, icon, placeholder, name, required = false, defaultValue = "" }: any) {
   return (
-    <div className="space-y-3">
-      <label className="text-sm font-black text-[#1a1a1a] flex items-center gap-2 px-1">
-        <span className="text-[#A371F7]">{icon}</span>
+    <div className="space-y-4">
+      <label className="text-[11px] font-bold text-[#1A1A1A] tracking-widest uppercase flex items-center gap-2">
+        <span className="text-[#1A1A1A]">{icon}</span>
         {label}
       </label>
       <input 
         type="text" 
         name={name}
         defaultValue={defaultValue}
-        className="w-full px-6 py-4 bg-[#f6f8fa] border border-[#d0d7de] rounded-2xl focus:ring-2 focus:ring-[#A371F7]/20 focus:border-[#A371F7] outline-none transition-all font-medium"
+        className="w-full px-6 py-4 bg-[#F5F2EA]/30 border border-[#EBE6DF] focus:border-[#1A1A1A] outline-none transition-all text-[13px]"
         placeholder={placeholder}
         required={required}
       />
