@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
-import { Github, Code, Database, LogOut, Layers, Menu, X, ChevronRight, BarChart3 } from "lucide-react";
+import { Github, Code, Database, LogOut, Layers, Menu, X, ChevronRight, BarChart3, Info, Zap } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getApiUrl } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,6 +27,8 @@ export function Navbar() {
     { name: "Projects", href: "/projects", icon: Layers },
     { name: "Dashboard", href: "/dashboard", icon: Code },
     { name: "Leaderboard", href: "/leaderboard", icon: BarChart3 },
+    { name: "Docs", href: "/docs", icon: Info },
+    { name: "Fresher track", href: "/fresher-application", icon: Zap },
     ...(user?.is_admin ? [{ name: "Admin", href: "/admin/repositories", icon: Database }] : []),
   ];
 
@@ -41,8 +43,9 @@ export function Navbar() {
             {/* Logo area */}
             <div className="flex items-center justify-start flex-1 min-w-0">
               <Link href="/" className="flex items-center gap-2 shrink-0 group">
-                <span className="font-bold text-sm tracking-widest text-[#1A1A1A] uppercase flex items-center gap-1.5 md:gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#1A1A1A] group-hover:bg-[#8C867E] transition-colors" /> SKILLFEST<span className="text-[#8C867E]">.</span>
+                <span className="font-bold text-sm tracking-widest text-[#1A1A1A] uppercase flex items-center gap-2">
+                  <img src="/image.png" alt="SkillFest Logo" className="w-6 h-6 object-contain grayscale group-hover:grayscale-0 transition-all" />
+                  SKILLFEST<span className="text-[#8C867E]">.</span>
                 </span>
               </Link>
             </div>
