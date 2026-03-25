@@ -4,22 +4,23 @@
   /* ─── Core Palette (Beige Vibe) ─── */
   --background: #FDFBF7;
   --foreground: #1A1A1A;
-  
+
   /* Surface tiers */
   --surface-1: #F5F2EA;
   --surface-2: #F0EDE4;
   --surface-3: #EBE6DF;
   --surface-4: #E1DBD2;
-  
+
   /* Accents */
   --accent: #1A1A1A;
   --accent-2: #8C867E;
-  
+
   /* Borders */
   --border: #EBE6DF;
   --border-hover: #D6D0C4;
-  
-  --radius: 0.5rem; /* modern sharp/slightly rounded */
+
+  --radius: 0.5rem;
+  /* modern sharp/slightly rounded */
 }
 
 * {
@@ -36,11 +37,16 @@ body {
   min-height: 100vh;
 }
 
-code, .font-mono {
+code,
+.font-mono {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-h1, h2, h3, h4, .font-display {
+h1,
+h2,
+h3,
+h4,
+.font-display {
   font-family: var(--font-space-grotesk), var(--font-geist-sans), sans-serif;
   letter-spacing: -0.04em;
   font-weight: 800;
@@ -83,10 +89,22 @@ h1, h2, h3, h4, .font-display {
 }
 
 /* ──── Scrollbar ──── */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--background); }
-::-webkit-scrollbar-thumb { background: var(--surface-4); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-4);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
 
 ::selection {
   background: rgba(255, 255, 255, 0.2);
