@@ -49,11 +49,11 @@ export default function HomeClient() {
       <section className="pt-32 md:pt-48 pb-16 flex flex-col items-center justify-center text-center px-6 relative w-full">
         <motion.div initial="hidden" animate="show" variants={stagger} className="w-full max-w-5xl mx-auto flex flex-col items-center">
 
-          <motion.h1 
-            variants={fadeUp} 
+          <motion.h1
+            variants={fadeUp}
             className="text-[40px] md:text-[64px] lg:text-[80px] font-bold leading-[1.05] tracking-tight text-[#1A1A1A] mb-8 mx-auto"
           >
-            <span className="text-[#8C867E] font-normal">&gt;</span>Showcase your skills by<br/>contributing to <br/>
+            <span className="text-[#8C867E] font-normal">&gt;</span>Showcase your skills by<br />contributing to <br />
             <span className="text-[#1A1A1A] font-mono font-medium tracking-normal text-[36px] md:text-[60px] lg:text-[72px]">{"{open_source}"}</span> <span className="animate-pulse font-normal text-[#1A1A1A]">_</span>
           </motion.h1>
 
@@ -67,9 +67,8 @@ export default function HomeClient() {
                 <div key={step.id} className="flex items-center shrink-0">
                   <button
                     onClick={() => setActiveTab(step.id)}
-                    className={`px-3 md:px-5 py-2 md:py-2.5 rounded-full text-[11px] md:text-[13px] font-bold tracking-widest transition-colors ${
-                      activeTab === step.id ? "bg-[#1A1A1A] text-white shadow-md" : "text-[#8C867E] hover:text-[#1A1A1A]"
-                    }`}
+                    className={`px-3 md:px-5 py-2 md:py-2.5 rounded-full text-[11px] md:text-[13px] font-bold tracking-widest transition-colors ${activeTab === step.id ? "bg-[#1A1A1A] text-white shadow-md" : "text-[#8C867E] hover:text-[#1A1A1A]"
+                      }`}
                   >
                     {step.label}
                   </button>
@@ -91,7 +90,7 @@ export default function HomeClient() {
                 <span className="opacity-50">&gt;_</span> Get Started (2 min setup)
               </Link>
             )}
-            <Link href="/docs/event" className="w-full sm:w-auto px-8 py-3.5 bg-transparent border border-[#D6D0C4] text-[#1A1A1A] font-bold text-[13px] rounded hover:bg-[#F5F2EA] transition-colors flex items-center justify-center gap-2">
+            <Link href="/docs" className="w-full sm:w-auto px-8 py-3.5 bg-transparent border border-[#D6D0C4] text-[#1A1A1A] font-bold text-[13px] rounded hover:bg-[#F5F2EA] transition-colors flex items-center justify-center gap-2">
               &lt;&gt; Documentation
             </Link>
           </motion.div>
@@ -102,7 +101,7 @@ export default function HomeClient() {
       <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-[#EBE6DF] to-transparent my-10 max-w-6xl mx-auto" />
       <section ref={sectorRef} className="py-12 px-6 w-full max-w-6xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-y-12 md:gap-y-0 text-left">
-          
+
           <div className="reveal-item md:pr-10 md:border-r border-[#EBE6DF] flex flex-col">
             <div className="flex items-center gap-2 mb-6 text-[#1A1A1A] font-bold text-[15px] font-mono">
               <Zap className="w-4 h-4 text-[#8C867E]" />
