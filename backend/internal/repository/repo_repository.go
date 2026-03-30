@@ -12,6 +12,7 @@ type RepositoryRepository interface {
 	DeleteRepository(ctx context.Context, id uuid.UUID) error
 	GetActiveRepositories(ctx context.Context) ([]model.Repository, error)
 	GetRepositoryByID(ctx context.Context, id uuid.UUID) (*model.Repository, error)
+	UpdateRepository(ctx context.Context, repo *model.Repository) error
 	
 	CreateAttempt(ctx context.Context, attempt *model.IssueAttempt) error
 	GetUserAttempts(ctx context.Context, userID uuid.UUID) ([]model.IssueAttempt, error)

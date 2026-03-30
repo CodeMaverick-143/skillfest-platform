@@ -66,3 +66,7 @@ func (r *PostgresRepoRepository) GetAttempt(ctx context.Context, userID uuid.UUI
 func (r *PostgresRepoRepository) UpdateAttemptStatus(ctx context.Context, id uuid.UUID, status string) error {
 	return r.db.WithContext(ctx).Model(&model.IssueAttempt{}).Where("id = ?", id).Update("status", status).Error
 }
+
+func (r *PostgresRepoRepository) UpdateRepository(ctx context.Context, repo *model.Repository) error {
+	return r.db.WithContext(ctx).Save(repo).Error
+}

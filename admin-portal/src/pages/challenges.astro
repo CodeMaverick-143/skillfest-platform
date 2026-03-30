@@ -1,0 +1,187 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Plus, Trash2, Edit3, Settings2, LayoutGrid, Globe, Zap, Shield, Target } from 'lucide-react';
+---
+
+<Layout title="Challenges">
+  <div class="space-y-16">
+    <!-- ─── Page Header ─── -->
+    <div class="flex items-end justify-between border-b border-slate-100 pb-12">
+      <div>
+        <h2 class="title-primary">
+          Manage <span class="text-indigo-600">Challenges</span>
+        </h2>
+        <p class="sub-header">Configure connected repositories and issue metadata clusters.</p>
+      </div>
+      
+      <a href="/repositories" class="btn-primary flex items-center gap-3">
+        <Plus size={20} />
+        Add Repository
+      </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+      <!-- Repository Section -->
+      <section class="lg:col-span-7 card p-12 bg-white flex flex-col">
+        <div class="flex items-center justify-between mb-10">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+              <LayoutGrid size={24} />
+            </div>
+            <h3 class="title-secondary !text-2xl">Connected Nodes</h3>
+          </div>
+          <span id="repoCount" class="badge-status bg-indigo-50 text-indigo-600 border-indigo-100 uppercase tracking-[0.2em] !text-[9px]">LOADING...</span>
+        </div>
+        
+        <div class="space-y-6 flex-1" id="repoList">
+          {[1, 2].map(() => (
+            <div class="animate-pulse h-24 bg-slate-50 rounded-[32px] border border-slate-100 px-8 py-6"></div>
+          ))}
+        </div>
+      </section>
+
+      <!-- Tags & Config Section -->
+      <section class="lg:col-span-5 card p-12 bg-slate-950 text-white border-none shadow-premium relative overflow-hidden group">
+        <div class="absolute -right-24 -top-24 w-72 h-72 bg-indigo-500/20 rounded-full blur-[100px] group-hover:scale-125 transition-transform duration-1000"></div>
+        
+        <div class="relative z-10 flex flex-col h-full">
+          <div class="flex items-center gap-4 mb-8">
+            <Settings2 size={24} className="text-indigo-400" />
+            <h3 class="title-secondary !text-white !text-2xl">System Parameters</h3>
+          </div>
+          <p class="text-slate-400 font-bold text-sm tracking-tight mb-12">Define standard labels and global tracking mechanics.</p>
+          
+          <div class="space-y-12">
+            <div>
+              <p class="label-caps !text-slate-500 mb-6 tracking-[0.4em]">ACCEPTED LABELS</p>
+              <div class="flex flex-wrap gap-3">
+                {['skillfest', 'bug', 'enhancement', 'good-first-issue'].map(tag => (
+                  <span class="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black tracking-tight text-slate-300 uppercase italic">${tag}</span>
+                ))}
+                <button class="px-4 py-2 rounded-xl border border-dashed border-white/20 text-[10px] font-black tracking-tight text-slate-500 hover:text-white hover:border-white/40 transition-all uppercase italic">+ ADD</button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-10 pt-10 border-t border-white/5">
+              <div class="space-y-4">
+                <p class="label-caps !text-slate-500 tracking-[0.4em]">REALTIME SYNC</p>
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-6 rounded-full bg-indigo-600 relative flex items-center px-1 shadow-[0_0_15px_rgba(79,70,229,0.3)]">
+                    <div class="w-4 h-4 rounded-full bg-white ml-auto shadow-sm"></div>
+                  </div>
+                  <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest animate-pulse">Operational</span>
+                </div>
+              </div>
+              <div class="space-y-4">
+                <p class="label-caps !text-slate-500 tracking-[0.4em]">REWARD SCALAR</p>
+                <p class="text-5xl font-black italic tracking-tighter text-indigo-100">1.0x</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Active Issues Grid -->
+    <div class="pt-8">
+      <div class="flex items-center gap-8 mb-12">
+        <h3 class="title-secondary !text-3xl whitespace-nowrap">Verified <span class="text-indigo-600">Activity stream</span></h3>
+        <div class="h-px w-full bg-slate-100"></div>
+        <p id="issuesStatus" class="label-caps !text-slate-400 tracking-[0.3em] animate-pulse whitespace-nowrap !text-[9px]">Synchronizing issues...</p>
+      </div>
+
+      <div class="card overflow-hidden">
+        <div class="divide-y divide-slate-50" id="issuesList">
+           <div class="p-32 text-center flex flex-col items-center gap-8">
+             <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-indigo-600 border-r-4 border-r-transparent shadow-xl shadow-indigo-100"></div>
+             <p class="label-caps animate-pulse">Accessing GitHub Service Cluster...</p>
+           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script is:inline>
+  const repoList = document.getElementById('repoList');
+  const repoCount = document.getElementById('repoCount');
+  const issuesList = document.getElementById('issuesList');
+  const issuesStatus = document.getElementById('issuesStatus');
+
+  async function loadRepoData() {
+    try {
+      const res = await fetch('/api/admin/repositories');
+      const repos = await res.json();
+      
+      repoCount.innerText = `${repos.length} ACTIVE CLUSTERS`;
+      
+      if (repos.length === 0) {
+        repoList.innerHTML = '<div class="p-20 text-center bg-slate-50 rounded-[40px] border border-dashed border-slate-200"><p class="label-caps animate-pulse opacity-40">Disconnected Cluster</p></div>';
+        return;
+      }
+
+      repoList.innerHTML = repos.map(repo => `
+        <div class="flex items-center justify-between p-8 rounded-[32px] bg-white border border-slate-100 hover:shadow-2xl hover:border-indigo-100 transition-all duration-500 group">
+          <div class="flex items-center gap-6">
+            <div class="w-14 h-14 rounded-2xl bg-slate-950 flex items-center justify-center text-white group-hover:bg-indigo-600 transition-all duration-500 shadow-sm">
+               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            </div>
+            <div>
+              <p class="font-black text-slate-900 text-xl tracking-tight leading-tight">${repo.owner} / <span class="text-indigo-600">${repo.name}</span></p>
+              <p class="label-caps !text-slate-400 !text-[8px] mt-2 tracking-[0.3em]">NODE ${repo.id.split('-')[0].toUpperCase()} <span class="mx-2 opacity-20">/</span> SOURCE: GITHUB</p>
+            </div>
+          </div>
+          <a href="/repositories" class="w-12 h-12 rounded-2xl hover:bg-slate-50 text-slate-300 hover:text-slate-900 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </a>
+        </div>
+      `).join('');
+    } catch (e) {
+      repoCount.innerText = 'SYNC ERROR';
+      repoList.innerHTML = '<div class="p-20 text-center bg-rose-50 rounded-[40px] border border-rose-100"><p class="label-caps !text-rose-500 animate-pulse">Protocol Cluster Access Failure</p></div>';
+    }
+  }
+
+  async function loadIssues() {
+    try {
+      const res = await fetch('/api/challenges');
+      const issues = await res.json();
+      
+      issuesStatus.innerText = `LOCKED ON ${issues.length} SIGNAL(S)`;
+      issuesStatus.classList.remove('animate-pulse');
+
+      if (issues.length === 0) {
+        issuesList.innerHTML = '<div class="p-32 text-center flex flex-col items-center gap-4"><p class="label-caps animate-pulse opacity-40">No active issues detected in the cluster.</p></div>';
+        return;
+      }
+
+      issuesList.innerHTML = issues.map(issue => `
+        <div class="px-12 py-10 flex items-center justify-between hover:bg-slate-50/50 transition-all group">
+          <div class="flex gap-10">
+            <div class="w-2 h-16 bg-slate-100 rounded-full group-hover:bg-indigo-600 transition-all duration-500"></div>
+            <div>
+              <p class="font-black text-slate-900 text-2xl tracking-tighter leading-none group-hover:translate-x-2 transition-transform duration-500">${issue.title}</p>
+              <div class="flex items-center gap-6 mt-4">
+                 <p class="label-caps !text-slate-400 !text-[9px] tracking-[0.3em]">${issue.repo} <span class="mx-3 opacity-20">/</span> HUB ID: ${issue.id}</p>
+                 <div class="flex gap-3">
+                    <span class="badge-status bg-indigo-50 text-indigo-600 border-indigo-100 !px-3 !py-1 !text-[7px]">Tier: ${issue.difficulty}</span>
+                    ${issue.labels ? issue.labels.slice(0, 2).map(l => `<span class="badge-status bg-slate-100 text-slate-500 border-slate-200 !px-3 !py-1 !text-[7px]">${l}</span>`).join('') : ''}
+                 </div>
+              </div>
+            </div>
+          </div>
+          <a href="${issue.url}" target="_blank" class="btn-secondary !bg-white group-hover:!bg-slate-950 group-hover:!text-white transition-all flex items-center gap-4 !px-8 !py-4">
+            <span class="font-black uppercase italic tracking-tighter text-xs">Analyze Track</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </div>
+      `).join('');
+    } catch (e) {
+      issuesStatus.innerText = 'SIGNAL LOST';
+      issuesList.innerHTML = '<div class="p-32 text-center flex flex-col items-center gap-4"><p class="label-caps !text-rose-500 animate-pulse">Security Protocol: GitHub Sync Interrupted</p></div>';
+    }
+  }
+
+  loadRepoData();
+  loadIssues();
+</script>

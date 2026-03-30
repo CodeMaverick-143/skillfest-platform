@@ -29,7 +29,6 @@ export function Navbar() {
     { name: "Leaderboard", href: "/leaderboard", icon: BarChart3 },
     { name: "Docs", href: "/docs", icon: Info },
     { name: "Fresher track", href: "/fresher-application", icon: Zap },
-    ...(user?.is_admin ? [{ name: "Admin", href: "/admin/repositories", icon: Database }] : []),
   ];
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);

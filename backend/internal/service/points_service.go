@@ -9,21 +9,23 @@ import (
 type PointsService struct {
 	userRepo   repository.UserRepository
 	prRepo     repository.PRRepository
+	repoRepo   repository.RepositoryRepository
 }
 
-func NewPointsService(userRepo repository.UserRepository, prRepo repository.PRRepository) *PointsService {
-	return &PointsService{userRepo: userRepo, prRepo: prRepo}
+func NewPointsService(userRepo repository.UserRepository, prRepo repository.PRRepository, repoRepo repository.RepositoryRepository) *PointsService {
+	return &PointsService{userRepo: userRepo, prRepo: prRepo, repoRepo: repoRepo}
 }
 
 func (s *PointsService) RecalculateUserLevel(ctx context.Context, userID uuid.UUID) error {
-	prs, err := s.prRepo.GetByUserID(ctx, userID)
+	// Use the optimized SQL-level filtering method
+	prs, err := s.prRepo.GetFilteredByUser(ctx, userID)
 	if err != nil {
 		return err
 	}
 
 	totalPoints := 0
 	for _, pr := range prs {
-		if pr.State == "merged" { 
+		if pr.State == "merged" {
 			totalPoints += pr.Points
 		}
 	}

@@ -59,6 +59,21 @@ func (r *PostgresUserRepository) Update(ctx context.Context, user *model.User) e
 
 func (r *PostgresUserRepository) GetLeaderboard(ctx context.Context, limit int) ([]model.User, error) {
 	var users []model.User
-	err := r.db.WithContext(ctx).Where("is_hidden = ?", false).Order("points desc").Limit(limit).Find(&users).Error
+	err := r.db.WithContext(ctx).Where("is_hidden = ? AND is_banned = ?", false, false).Order("points desc").Limit(limit).Find(&users).Error
 	return users, err
+}
+
+func (r *PostgresUserRepository) List(ctx context.Context) ([]model.User, error) {
+	var users []model.User
+	err := r.db.WithContext(ctx).Order("points desc").Find(&users).Error
+	return users, err
+}
+
+func (r *PostgresUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	var u model.User
+	err := r.db.WithContext(ctx).First(&u, "email = ?", email).Error
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
 }

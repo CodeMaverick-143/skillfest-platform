@@ -1,0 +1,704 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { ClipboardCheck, X, Plus, Trash2, ChevronDown } from 'lucide-react';
+---
+
+<Layout title="Evaluations">
+  <div class="space-y-16">
+    <!-- ─── Page Header ─── -->
+    <div class="flex items-end justify-between border-b border-slate-100 pb-12">
+      <div>
+        <h2 class="title-primary">
+          Project <span class="text-indigo-600">Evaluations</span>
+        </h2>
+        <p class="sub-header">Manually score participant projects against configurable rubric criteria.</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="relative group">
+          <input
+            type="text"
+            id="evalSearch"
+            placeholder="Search participants..."
+            class="pl-6 pr-8 py-5 rounded-2xl bg-white border border-slate-100 focus:border-indigo-600 focus:ring-8 focus:ring-indigo-50 outline-none transition-all w-80 text-sm font-bold shadow-sm placeholder:text-slate-300"
+          />
+        </div>
+        <div id="statusFilter" class="flex gap-2">
+          <button data-filter="all" class="filter-btn active">All</button>
+          <button data-filter="pending" class="filter-btn">Pending</button>
+          <button data-filter="reviewed" class="filter-btn">Reviewed</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Participant Grid ─── -->
+    <div id="evalGrid" class="grid gap-6">
+      <!-- Skeleton loaders -->
+      {[1,2,3,4].map(() => (
+        <div class="animate-pulse bg-white h-28 rounded-[32px] border border-slate-100 shadow-sm"></div>
+      ))}
+    </div>
+  </div>
+
+  <!-- ─── Evaluation Panel Modal ─── -->
+  <div id="evalModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-2xl z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-500">
+    <div class="bg-white w-full max-w-5xl max-h-[94vh] overflow-y-auto rounded-[48px] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.35)] border border-white/20 relative scale-95 transition-transform duration-500" id="evalModalContainer">
+      <button id="closeEvalModal" class="absolute top-10 right-10 p-4 hover:bg-slate-100 rounded-3xl transition-all group z-20">
+        <X size={24} className="text-slate-400 group-hover:text-slate-900 group-hover:rotate-90 transition-all duration-500" />
+      </button>
+      <div class="p-16" id="evalPanelContent">
+        <!-- Dynamically rendered -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Rubric Builder Modal ─── -->
+  <div id="rubricModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-2xl z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-500">
+    <div class="bg-white w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-[48px] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.35)] border border-white/20 relative scale-95 transition-transform duration-500" id="rubricModalContainer">
+      <button id="closeRubricModal" class="absolute top-10 right-10 p-4 hover:bg-slate-100 rounded-3xl transition-all group z-20">
+        <X size={24} className="text-slate-400 group-hover:text-slate-900 group-hover:rotate-90 transition-all duration-500" />
+      </button>
+      <div class="p-16">
+        <div class="flex items-center gap-5 mb-12">
+          <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center">
+            <ClipboardCheck size={26} />
+          </div>
+          <div>
+            <h3 class="title-secondary !text-3xl">Configure <span class="text-indigo-600">Rubric</span></h3>
+            <p class="text-slate-400 text-sm font-medium mt-1">Define custom scoring categories for this evaluation.</p>
+          </div>
+        </div>
+
+        <div class="space-y-4 mb-8">
+          <label class="label-caps ml-2">Rubric Name</label>
+          <input id="rubricName" type="text" placeholder="e.g. Technical Review 2026" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 font-bold placeholder:text-slate-300 focus:ring-8 focus:ring-indigo-50 focus:border-indigo-600 outline-none transition-all" />
+        </div>
+
+        <!-- Categories List -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <label class="label-caps ml-2">Scoring Categories</label>
+            <button id="addCategoryBtn" class="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest hover:bg-indigo-50 px-4 py-2 rounded-xl transition-all">
+              <Plus size={14} />
+              Add Category
+            </button>
+          </div>
+
+          <div id="categoryList" class="space-y-3">
+            <!-- Dynamic category rows -->
+          </div>
+          <div id="rubricTotal" class="mt-6 p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+            <span class="label-caps">Total Max Score</span>
+            <span id="totalMaxScore" class="font-black text-2xl text-slate-900 tabular-nums">0</span>
+          </div>
+        </div>
+
+        <div class="flex gap-4 mt-8">
+          <button id="cancelRubricBtn" class="flex-1 btn-secondary !py-5">Cancel</button>
+          <button id="saveRubricBtn" class="flex-[2] btn-primary !py-5">Save Rubric</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .filter-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem;
+    font-weight: 900;
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border: 1px solid #f1f5f9;
+    background: white;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-btn:hover { background: #f8fafc; }
+  .filter-btn.active {
+    background: #4f46e5;
+    color: white;
+    border-color: #4f46e5;
+    box-shadow: 0 10px 25px -5px rgba(99,102,241,0.25);
+  }
+  .score-input {
+    width: 5.5rem;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    font-weight: 900;
+    text-align: center;
+    font-size: 1.125rem;
+    font-variant-numeric: tabular-nums;
+    outline: none;
+    transition: all 0.15s;
+  }
+  .score-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+  }
+  .score-input:disabled { opacity: 0.6; cursor: not-allowed; }
+  .score-input::-webkit-outer-spin-button,
+  .score-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .score-input[type=number] { -moz-appearance: textfield; }
+  .category-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 80px auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 1.25rem;
+    background: #f8fafc;
+    border-radius: 1rem;
+    border: 1px solid #f1f5f9;
+  }
+</style>
+
+<script is:inline>
+const API = {
+  evaluations: '/api/admin/evaluations',
+  users: '/api/admin/users',
+  repos: '/api/admin/repositories',
+  rubric: (repoId) => repoId ? `/api/admin/repositories/${repoId}/rubric` : '/api/admin/rubric/default',
+  submitEval: (id) => `/api/admin/evaluations/${id}/submit`,
+  userEvals: (uid) => `/api/admin/evaluations/user/${uid}`,
+};
+
+let allUsers = [];
+let allEvaluations = [];
+let activeFilter = 'all';
+let currentUser = null;
+let currentRepoId = null;
+let currentRubric = null;
+let currentEval = null;
+let rubricCategories = [];
+let currentRubricRepoId = null;
+
+// ─── Data Loading ──────────────────────────────────────────────────────────────
+
+async function init() {
+  const [usersRes, evalsRes] = await Promise.all([
+    fetch(API.users).then(r => r.json()).catch(() => []),
+    fetch(API.evaluations).then(r => r.json()).catch(() => []),
+  ]);
+  allUsers = usersRes || [];
+  allEvaluations = evalsRes || [];
+  renderGrid(allUsers);
+}
+
+// ─── Grid Rendering ────────────────────────────────────────────────────────────
+
+function getEvalStatus(userId) {
+  const ev = allEvaluations.find(e => e.user_id === userId);
+  if (!ev) return 'pending';
+  return ev.reviewed ? 'reviewed' : 'draft';
+}
+
+function renderGrid(users) {
+  const grid = document.getElementById('evalGrid');
+  const searchVal = document.getElementById('evalSearch').value.toLowerCase();
+  const filtered = users.filter(u => {
+    if (searchVal && !u.username.toLowerCase().includes(searchVal)) return false;
+    const status = getEvalStatus(u.id);
+    if (activeFilter === 'pending' && status !== 'pending') return false;
+    if (activeFilter === 'reviewed' && status !== 'reviewed') return false;
+    return true;
+  });
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="p-24 text-center bg-slate-50 rounded-[48px] border border-dashed border-slate-200"><p class="label-caps opacity-40">No participants match your criteria.</p></div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(user => {
+    const status = getEvalStatus(user.id);
+    const evalData = allEvaluations.find(e => e.user_id === user.id);
+    const statusColor = {
+      pending: 'bg-amber-50 text-amber-600 border-amber-100',
+      draft: 'bg-sky-50 text-sky-600 border-sky-100',
+      reviewed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    }[status];
+    const statusLabel = { pending: 'Pending Review', draft: 'Draft Saved', reviewed: 'Reviewed ✓' }[status];
+
+    return `
+      <div class="card p-8 flex items-center justify-between group hover:cursor-pointer" onclick="openEvalPanel('${user.id}', '${user.username}')">
+        <div class="flex items-center gap-8">
+          <div class="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center font-black text-xl text-slate-400 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all duration-500">
+            ${user.username[0].toUpperCase()}
+          </div>
+          <div>
+            <p class="font-black text-xl text-slate-900 tracking-tight group-hover:text-indigo-600 transition-colors">${user.username}</p>
+            <p class="text-xs text-slate-400 font-bold mt-1">${user.email || 'github user'}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-10">
+          <div class="text-right">
+            <p class="font-black text-3xl tabular-nums tracking-tighter text-slate-900">${(user.points || 0).toLocaleString()}</p>
+            <p class="label-caps !text-slate-400 mt-1">Auto Points</p>
+          </div>
+          ${evalData ? `
+            <div class="text-right">
+              <p class="font-black text-3xl tabular-nums tracking-tighter text-emerald-600">+${evalData.total_points}</p>
+              <p class="label-caps !text-slate-400 mt-1">Eval Score</p>
+            </div>
+          ` : ''}
+          <span class="badge-status ${statusColor}">${statusLabel}</span>
+          <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─── Evaluation Panel ──────────────────────────────────────────────────────────
+
+window.openEvalPanel = async function(userId, username) {
+  currentUser = { id: userId, username };
+  currentRepoId = null;
+  currentEval = null;
+
+  showModal('evalModal', 'evalModalContainer');
+  document.getElementById('evalPanelContent').innerHTML = loadingSpinner('Loading evaluation...');
+
+  try {
+    const [repos, userEvals] = await Promise.all([
+      fetch(API.repos).then(r => r.json()),
+      fetch(API.userEvals(userId)).then(r => r.json()).catch(() => []),
+    ]);
+
+    currentEval = userEvals && userEvals[0] ? userEvals[0] : null;
+    renderEvalPanel(username, repos || [], currentEval);
+  } catch (e) {
+    document.getElementById('evalPanelContent').innerHTML = '<p class="text-rose-500 font-bold">Failed to load evaluation data.</p>';
+  }
+};
+
+function renderEvalPanel(username, repos, existingEval) {
+  const isLocked = existingEval?.reviewed;
+
+  document.getElementById('evalPanelContent').innerHTML = `
+    <div class="flex items-start justify-between mb-12">
+      <div>
+        <h3 class="text-5xl font-black tracking-tighter uppercase italic leading-none">${username}<br/><span class="text-indigo-600">Evaluation</span></h3>
+        <p class="text-slate-400 font-medium mt-4">Score this participant's contributions across the configured rubric categories.</p>
+      </div>
+      <div class="w-20 h-20 rounded-[28px] bg-indigo-50 border border-indigo-100 flex items-center justify-center font-black text-3xl text-indigo-600">
+        ${username[0].toUpperCase()}
+      </div>
+    </div>
+
+    ${isLocked ? `
+      <div class="mb-10 p-6 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-4">
+        <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>
+          <p class="font-black text-emerald-800 text-sm tracking-tight">Evaluation Submitted & Locked</p>
+          <p class="text-emerald-600 text-xs font-medium mt-0.5">Reviewed by ${existingEval.reviewed_by} · ${existingEval.total_points} points awarded</p>
+        </div>
+      </div>
+    ` : ''}
+
+    <!-- Repository selector -->
+    <div class="mb-10 space-y-4">
+      <label class="label-caps ml-2">Repository Cluster (optional)</label>
+      <select id="repoSelector" ${isLocked ? 'disabled' : ''} class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 font-bold focus:ring-8 focus:ring-indigo-50 focus:border-indigo-600 outline-none transition-all appearance-none cursor-pointer">
+        <option value="">— Global / No specific repository —</option>
+        ${repos.map(r => `<option value="${r.id}" ${existingEval?.repo_id === r.id ? 'selected' : ''}>${r.owner}/${r.name}</option>`).join('')}
+      </select>
+    </div>
+
+    <!-- Rubric / scoring section -->
+    <div id="rubricSection" class="mb-12">
+      ${loadingSpinner('Loading rubric...')}
+    </div>
+
+    ${!isLocked ? `
+    <div class="flex gap-4 pt-8 border-t border-slate-100">
+      <button onclick="saveDraft()" id="saveDraftBtn" class="flex-1 btn-secondary !py-5">Save Draft</button>
+      <button onclick="confirmSubmit()" id="submitEvalBtn" class="flex-[2] btn-primary !py-5">
+        Submit & Award Points
+      </button>
+    </div>
+    ` : ''}
+  `;
+
+  // Load rubric when repo changes
+  const repoSelector = document.getElementById('repoSelector');
+  repoSelector.addEventListener('change', () => loadRubric(repoSelector.value || null));
+  loadRubric(existingEval?.repo_id || null, existingEval);
+}
+
+async function loadRubric(repoId, existingEval) {
+  currentRepoId = repoId;
+  const section = document.getElementById('rubricSection');
+  if (!section) return;
+  section.innerHTML = loadingSpinner('Loading rubric...');
+
+  try {
+    const res = await fetch(API.rubric(repoId));
+    if (!res.ok) {
+      section.innerHTML = noRubricPrompt();
+      return;
+    }
+    const data = await res.json();
+    currentRubric = data.rubric || data;
+    const categories = JSON.parse(currentRubric.categories || '[]');
+    const scores = existingEval ? JSON.parse(existingEval.scores || '{}') : {};
+    const notes = existingEval ? JSON.parse(existingEval.notes || '{}') : {};
+    const isLocked = existingEval?.reviewed;
+
+    renderRubricForm(categories, scores, notes, isLocked);
+  } catch (e) {
+    section.innerHTML = noRubricPrompt();
+  }
+}
+
+function renderRubricForm(categories, scores, notes, isLocked) {
+  const section = document.getElementById('rubricSection');
+  if (!categories.length) {
+    section.innerHTML = noRubricPrompt();
+    return;
+  }
+
+  section.innerHTML = `
+    <div class="flex items-center justify-between mb-8">
+      <div class="flex items-center gap-6">
+        <h4 class="label-caps tracking-[0.4em]">Scoring Rubric</h4>
+        <span class="badge-status bg-indigo-50 text-indigo-600 border-indigo-100">${currentRubric?.name || 'Default'}</span>
+      </div>
+      <div class="flex items-center gap-6 bg-indigo-600 text-white rounded-2xl px-6 py-3">
+        <span class="label-caps !text-indigo-200 tracking-widest">Total</span>
+        <span id="liveTotal" class="font-black text-2xl tabular-nums">0</span>
+        <span class="text-indigo-200 font-black">/ ${categories.reduce((s, c) => s + c.max_score, 0)}</span>
+      </div>
+    </div>
+
+    <div class="space-y-4" id="rubricFormRows">
+      ${categories.map(cat => `
+        <div class="p-6 border border-slate-100 rounded-2xl bg-white hover:border-indigo-100 transition-all group">
+          <div class="flex items-start justify-between gap-6 mb-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-1.5">
+                <span class="font-black text-slate-900 text-lg tracking-tight">${cat.label}</span>
+                <span class="badge-status bg-slate-100 border-slate-200 text-slate-500">Max: ${cat.max_score}</span>
+              </div>
+              ${cat.description ? `<p class="text-slate-400 text-sm font-medium">${cat.description}</p>` : ''}
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <input
+                type="number"
+                data-key="${cat.key}"
+                data-max="${cat.max_score}"
+                value="${scores[cat.key] ?? ''}"
+                min="0" max="${cat.max_score}"
+                placeholder="0"
+                ${isLocked ? 'disabled' : ''}
+                class="score-input ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}"
+                oninput="updateLiveTotal()"
+              />
+              <span class="text-slate-400 font-black text-sm">pts</span>
+            </div>
+          </div>
+          <textarea
+            data-notes-key="${cat.key}"
+            placeholder="Notes for ${cat.label}..."
+            ${isLocked ? 'disabled' : ''}
+            class="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium placeholder:text-slate-300 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none transition-all resize-none h-16 ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}"
+          >${notes[cat.key] || ''}</textarea>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  updateLiveTotal();
+}
+
+function noRubricPrompt() {
+  return `
+    <div class="p-10 bg-amber-50 border border-amber-100 rounded-2xl text-center">
+      <p class="font-black text-amber-800 mb-2">No rubric configured</p>
+      <p class="text-sm text-amber-600 font-medium mb-6">Configure a rubric for this repository or the global default from the <strong>Repositories</strong> page.</p>
+    </div>
+  `;
+}
+
+function updateLiveTotal() {
+  const inputs = document.querySelectorAll('#rubricFormRows input[data-key]');
+  let total = 0;
+  inputs.forEach(input => {
+    const max = parseInt(input.dataset.max);
+    let val = parseInt(input.value) || 0;
+    if (val > max) { val = max; input.value = max; }
+    if (val < 0) { val = 0; input.value = 0; }
+    total += val;
+  });
+  const el = document.getElementById('liveTotal');
+  if (el) el.textContent = total;
+}
+
+function collectFormData() {
+  const inputs = document.querySelectorAll('#rubricFormRows input[data-key]');
+  const notesEls = document.querySelectorAll('#rubricFormRows textarea[data-notes-key]');
+  const scores = {};
+  const notes = {};
+  let total = 0;
+
+  inputs.forEach(input => {
+    const key = input.dataset.key;
+    const val = Math.min(parseInt(input.value) || 0, parseInt(input.dataset.max));
+    scores[key] = val;
+    total += val;
+  });
+  notesEls.forEach(ta => {
+    const key = ta.dataset.notesKey;
+    notes[key] = ta.value.trim();
+  });
+
+  return { scores, notes, total };
+}
+
+window.saveDraft = async function() {
+  const { scores, notes, total } = collectFormData();
+  if (!currentRubric) return alert('No rubric loaded. Cannot save.');
+
+  const btn = document.getElementById('saveDraftBtn');
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+
+  const payload = {
+    user_id: currentUser.id,
+    repo_id: currentRepoId || undefined,
+    rubric_id: currentRubric.id,
+    scores: JSON.stringify(scores),
+    notes: JSON.stringify(notes),
+    total_points: total,
+    reviewed: false,
+  };
+
+  try {
+    const res = await fetch(API.evaluations, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    currentEval = await res.json();
+    showToast('Draft saved successfully');
+  } catch (e) {
+    showToast('Failed to save draft', 'error');
+  } finally {
+    btn.textContent = 'Save Draft';
+    btn.disabled = false;
+  }
+};
+
+window.confirmSubmit = async function() {
+  const { total } = collectFormData();
+  if (total === 0) {
+    return showToast('Please enter scores before submitting', 'error');
+  }
+
+  // Save draft first to get/update the eval record
+  await window.saveDraft();
+  if (!currentEval?.id) return showToast('Save draft first before submitting', 'error');
+
+  if (!confirm(`Award ${total} points to ${currentUser.username}? This action is irreversible.`)) return;
+
+  const btn = document.getElementById('submitEvalBtn');
+  btn.textContent = 'Submitting...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(API.submitEval(currentEval.id), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const result = await res.json();
+    showToast(`✓ ${result.points_awarded} points awarded to ${currentUser.username}`);
+    hideModal('evalModal', 'evalModalContainer');
+    await init();
+  } catch (e) {
+    showToast('Failed to submit evaluation', 'error');
+    btn.textContent = 'Submit & Award Points';
+    btn.disabled = false;
+  }
+};
+
+// ─── Rubric Builder (opened from this page or linked from repos) ────────────────
+
+window.openRubricBuilder = function(repoId) {
+  currentRubricRepoId = repoId || null;
+  rubricCategories = [];
+  showModal('rubricModal', 'rubricModalContainer');
+  renderCategoryList();
+
+  // Load existing rubric if available
+  fetch(API.rubric(repoId))
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (data) {
+        const rubric = data.rubric || data;
+        document.getElementById('rubricName').value = rubric.name || '';
+        rubricCategories = JSON.parse(rubric.categories || '[]');
+        renderCategoryList();
+      }
+    })
+    .catch(() => {});
+};
+
+function renderCategoryList() {
+  const list = document.getElementById('categoryList');
+  if (!rubricCategories.length) {
+    list.innerHTML = '<p class="text-slate-400 text-sm font-medium text-center py-6">No categories yet. Add one above.</p>';
+    updateRubricTotal();
+    return;
+  }
+
+  list.innerHTML = rubricCategories.map((cat, i) => `
+    <div class="category-row">
+      <input type="text" value="${cat.label}" placeholder="Category Name"
+        class="bg-white border border-slate-100 rounded-xl px-4 py-3 font-bold text-sm focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none transition-all"
+        oninput="updateCategory(${i}, 'label', this.value)" />
+      <input type="text" value="${cat.description || ''}" placeholder="Description (optional)"
+        class="bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-medium focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none transition-all placeholder:text-slate-300"
+        oninput="updateCategory(${i}, 'description', this.value)" />
+      <input type="number" value="${cat.max_score}" placeholder="Max" min="1" max="500"
+        class="bg-white border border-slate-100 rounded-xl px-3 py-3 font-black text-center text-sm tabular-nums focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none transition-all"
+        oninput="updateCategory(${i}, 'max_score', parseInt(this.value)||0); updateRubricTotal()" />
+      <button onclick="removeCategory(${i})" class="w-10 h-10 bg-rose-50 hover:bg-rose-500 text-rose-400 hover:text-white rounded-xl flex items-center justify-center transition-all flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+  `).join('');
+  updateRubricTotal();
+}
+
+window.updateCategory = function(i, field, value) {
+  if (rubricCategories[i]) rubricCategories[i][field] = value;
+};
+
+window.removeCategory = function(i) {
+  rubricCategories.splice(i, 1);
+  renderCategoryList();
+};
+
+function updateRubricTotal() {
+  const total = rubricCategories.reduce((s, c) => s + (parseInt(c.max_score) || 0), 0);
+  const el = document.getElementById('totalMaxScore');
+  if (el) el.textContent = total;
+}
+
+document.getElementById('addCategoryBtn').addEventListener('click', () => {
+  const key = `category_${Date.now()}`;
+  rubricCategories.push({ key, label: '', description: '', max_score: 10 });
+  renderCategoryList();
+});
+
+document.getElementById('saveRubricBtn').addEventListener('click', async () => {
+  const name = document.getElementById('rubricName').value.trim();
+  if (!name) return showToast('Please enter a rubric name', 'error');
+  if (!rubricCategories.length) return showToast('Add at least one category', 'error');
+
+  // Ensure each category has a valid key and label
+  for (const cat of rubricCategories) {
+    if (!cat.label.trim()) return showToast('All categories need a name', 'error');
+    if (!cat.key) cat.key = cat.label.toLowerCase().replace(/\s+/g, '_');
+  }
+
+  const payload = {
+    name,
+    categories: JSON.stringify(rubricCategories),
+    repo_id: currentRubricRepoId || undefined,
+  };
+
+  const btn = document.getElementById('saveRubricBtn');
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+
+  try {
+    const url = currentRubricRepoId ? `/api/admin/repositories/${currentRubricRepoId}/rubric` : '/api/admin/rubric/default';
+    const method = currentRubricRepoId ? 'PUT' : 'POST';
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error();
+    showToast('Rubric saved successfully');
+    hideModal('rubricModal', 'rubricModalContainer');
+  } catch {
+    showToast('Failed to save rubric', 'error');
+  } finally {
+    btn.textContent = 'Save Rubric';
+    btn.disabled = false;
+  }
+});
+
+// ─── Utilities ──────────────────────────────────────────────────────────────────
+
+function showModal(id, containerId) {
+  const modal = document.getElementById(id);
+  const container = document.getElementById(containerId);
+  modal.classList.remove('hidden');
+  setTimeout(() => {
+    modal.classList.add('opacity-100');
+    container.classList.remove('scale-95');
+  }, 10);
+}
+
+function hideModal(id, containerId) {
+  const modal = document.getElementById(id);
+  const container = document.getElementById(containerId);
+  modal.classList.remove('opacity-100');
+  container.classList.add('scale-95');
+  setTimeout(() => modal.classList.add('hidden'), 300);
+}
+
+function loadingSpinner(msg) {
+  return `<div class="flex flex-col items-center justify-center py-24 gap-6"><div class="animate-spin rounded-full h-12 w-12 border-t-4 border-indigo-600 border-r-4 border-r-transparent shadow-xl shadow-indigo-100"></div><p class="label-caps animate-pulse">${msg}</p></div>`;
+}
+
+let toastTimeout;
+function showToast(message, type = 'success') {
+  let toast = document.getElementById('globalToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'globalToast';
+    toast.className = 'fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] px-8 py-4 rounded-2xl font-black text-sm shadow-2xl transition-all duration-500 opacity-0 translate-y-4';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.className = `fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] px-8 py-4 rounded-2xl font-black text-sm shadow-2xl transition-all duration-500 ${type === 'error' ? 'bg-rose-600 text-white' : 'bg-slate-950 text-white'}`;
+  setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-4'), 10);
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => toast.classList.add('opacity-0', 'translate-y-4'), 3000);
+}
+
+// ─── Event Listeners ────────────────────────────────────────────────────────────
+
+document.getElementById('closeEvalModal').addEventListener('click', () => hideModal('evalModal', 'evalModalContainer'));
+document.getElementById('evalModal').addEventListener('click', e => { if (e.target === document.getElementById('evalModal')) hideModal('evalModal', 'evalModalContainer'); });
+
+document.getElementById('closeRubricModal').addEventListener('click', () => hideModal('rubricModal', 'rubricModalContainer'));
+document.getElementById('cancelRubricBtn').addEventListener('click', () => hideModal('rubricModal', 'rubricModalContainer'));
+document.getElementById('rubricModal').addEventListener('click', e => { if (e.target === document.getElementById('rubricModal')) hideModal('rubricModal', 'rubricModalContainer'); });
+
+document.getElementById('evalSearch').addEventListener('input', () => renderGrid(allUsers));
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    renderGrid(allUsers);
+  });
+});
+
+init();
+</script>

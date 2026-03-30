@@ -1,0 +1,247 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Plus, Globe, ClipboardList } from 'lucide-react';
+---
+
+<Layout title="Repositories">
+  <div class="space-y-16">
+    <!-- ─── Page Header ─── -->
+    <div class="flex items-end justify-between border-b border-slate-100 pb-12">
+      <div>
+        <h2 class="title-primary">
+          Project <span class="text-indigo-600">Clusters</span>
+        </h2>
+        <p class="sub-header">Add and manage Git repositories for universal tracking.</p>
+      </div>
+      
+      <button 
+        id="addRepoBtn"
+        class="btn-primary flex items-center gap-3"
+      >
+        <Plus size={20} />
+        <span>Add Repository</span>
+      </button>
+    </div>
+
+    <!-- ─── Repository List ─── -->
+    <div class="grid gap-8" id="repoList">
+      {[1, 2].map(() => (
+        <div class="animate-pulse bg-white h-32 rounded-[32px] border border-slate-100 shadow-sm"></div>
+      ))}
+    </div>
+  </div>
+
+  <!-- ─── Add Repo Modal ─── -->
+  <div id="repoModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-2xl z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-500">
+    <div class="bg-white w-full max-w-2xl rounded-[48px] p-16 shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] border border-white/20 relative scale-95 transition-transform duration-500" id="modalContainer">
+      <div class="flex items-center gap-4 mb-10">
+        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+          <Globe size={24} />
+        </div>
+        <h3 class="title-secondary !text-3xl">Register <span class="text-indigo-600">New Cluster</span></h3>
+      </div>
+      
+      <form id="repoForm" class="space-y-10">
+        <div class="space-y-4">
+          <label class="label-caps ml-2">GitHub Repository URL</label>
+          <input 
+            type="url" 
+            name="url"
+            placeholder="https://github.com/org/repo"
+            required
+            class="w-full bg-slate-50 border-slate-100 rounded-3xl px-8 py-5 font-black placeholder:text-slate-300 focus:ring-8 focus:ring-indigo-50 focus:border-indigo-600 outline-none transition-all shadow-sm"
+          />
+        </div>
+        
+        <div class="grid grid-cols-2 gap-10">
+          <div class="space-y-4">
+            <label class="label-caps ml-2">Tracking Start</label>
+            <input 
+              type="date" 
+              name="start_date"
+              required
+              class="w-full bg-slate-50 border-slate-100 rounded-3xl px-8 py-5 font-black focus:ring-8 focus:ring-indigo-50 focus:border-indigo-600 outline-none transition-all shadow-sm"
+            />
+          </div>
+          <div class="space-y-4">
+            <label class="label-caps ml-2">Tracking End</label>
+            <input 
+              type="date" 
+              name="end_date"
+              required
+              class="w-full bg-slate-50 border-slate-100 rounded-3xl px-8 py-5 font-black focus:ring-8 focus:ring-indigo-50 focus:border-indigo-600 outline-none transition-all shadow-sm"
+            />
+          </div>
+        </div>
+
+        <!-- ─── Point Configuration ─── -->
+        <div class="space-y-6">
+          <div class="flex items-center gap-4">
+            <span class="label-caps opacity-50">Points Per Merged PR</span>
+            <div class="h-px flex-1 bg-slate-100"></div>
+          </div>
+          <p class="text-xs text-slate-400 font-medium ml-2 -mt-2">Points awarded to a user each time a pull request is successfully merged in this cluster.</p>
+          <div class="relative max-w-xs">
+            <input 
+              type="number" 
+              name="points_per_pr"
+              value="25"
+              min="0" max="1000"
+              required
+              class="w-full bg-slate-50 border-slate-100 rounded-2xl px-6 py-4 font-black text-xl tabular-nums text-center focus:ring-8 focus:ring-indigo-50 focus:border-indigo-600 outline-none transition-all shadow-sm"
+              style="appearance:textfield;-moz-appearance:textfield;"
+            />
+            <span class="absolute right-5 top-1/2 -translate-y-1/2 label-caps text-indigo-400">pts / PR</span>
+          </div>
+        </div>
+
+        <div class="flex gap-6 pt-6">
+          <button 
+            type="button"
+            id="cancelBtn"
+            class="flex-1 btn-secondary !py-5"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit"
+            class="flex-[2] btn-primary !py-5"
+          >
+            Initialize Cluster
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<script is:inline>
+  const API_BASE = '/api/admin/repositories';
+  const repoList = document.getElementById('repoList');
+  const repoModal = document.getElementById('repoModal');
+  const modalContainer = document.getElementById('modalContainer');
+  const addRepoBtn = document.getElementById('addRepoBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const repoForm = document.getElementById('repoForm');
+
+  async function loadRepos() {
+    try {
+      const res = await fetch(API_BASE);
+      const repos = await res.json();
+      
+      if (!repos || repos.length === 0) {
+        repoList.innerHTML = '<div class="p-24 text-center bg-slate-50 rounded-[48px] border border-dashed border-slate-200"><p class="label-caps opacity-40">No active repository clusters detected.</p></div>';
+        return;
+      }
+
+      repoList.innerHTML = repos.map(repo => `
+        <div class="card p-10 flex items-center justify-between group">
+          <div class="flex items-center gap-10">
+            <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-[28px] group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500 flex items-center justify-center shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <div>
+              <h4 class="text-3xl font-black text-slate-900 tracking-tighter group-hover:text-indigo-600 transition-colors">${repo.owner} / <span class="italic text-indigo-600 group-hover:text-slate-900">${repo.name}</span></h4>
+              <div class="flex items-center gap-6 mt-3">
+                 <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]"></div>
+                    <span class="label-caps !text-[9px] tracking-[0.3em]">Online since ${new Date(repo.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                 </div>
+                 <div class="w-1 h-1 rounded-full bg-slate-200"></div>
+                 <span class="label-caps !text-slate-400 !text-[9px] tracking-[0.3em]">Target: ${new Date(repo.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              </div>
+              <div class="flex items-center gap-2 mt-3">
+                <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:8px;background:#ede9fe;border:1px solid #ddd6fe;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;color:#7c3aed;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                  Merged PR — <b style="color:#5b21b6">${repo.points_per_pr ?? 25} pts</b>
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-6 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500 px-6">
+             <a href="/evaluation" onclick="sessionStorage.setItem('rubricRepoId','${repo.id}');" class="w-14 h-14 bg-indigo-50 hover:bg-indigo-600 text-indigo-500 hover:text-white rounded-2xl flex items-center justify-center transition-all shadow-sm" title="Configure Rubric">
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="m9 14 2 2 4-4"/></svg>
+             </a>
+             <a href="${repo.url}" target="_blank" class="w-14 h-14 bg-slate-50 hover:bg-slate-950 text-slate-400 hover:text-white rounded-2xl flex items-center justify-center transition-all shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+             </a>
+             <button onclick="handleDelete('${repo.id}')" class="w-14 h-14 bg-rose-50 hover:bg-rose-600 text-rose-500 hover:text-white rounded-2xl flex items-center justify-center transition-all shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+             </button>
+           </div>
+        </div>
+      `).join('');
+    } catch (err) {
+      repoList.innerHTML = '<div class="p-24 text-center bg-rose-50 rounded-[48px] border border-rose-100"><p class="label-caps !text-rose-500 animate-pulse">Critical node disconnect: Repository cluster inaccessible.</p></div>';
+    }
+  }
+
+  function showModal() {
+    repoModal.classList.remove('hidden');
+    setTimeout(() => {
+      repoModal.classList.add('opacity-100');
+      modalContainer.classList.remove('scale-95');
+    }, 10);
+  }
+
+  function hideModal() {
+    repoModal.classList.remove('opacity-100');
+    modalContainer.classList.add('scale-95');
+    setTimeout(() => repoModal.classList.add('hidden'), 300);
+  }
+
+  window.handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to decouple this repository cluster? Data tracking will cease immediately.')) return;
+    try {
+      await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+      loadRepos();
+    } catch (e) {
+      alert('Failed to drop cluster.');
+    }
+  };
+
+  addRepoBtn.onclick = showModal;
+  cancelBtn.onclick = hideModal;
+  repoModal.onclick = (e) => { if(e.target === repoModal) hideModal(); };
+
+  repoForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(repoForm);
+    const data = {
+      url: formData.get('url'),
+      start_date: new Date(formData.get('start_date')).toISOString(),
+      end_date: new Date(formData.get('end_date')).toISOString(),
+      points_per_pr: parseInt(formData.get('points_per_pr')) || 25,
+    };
+    
+    try {
+      const url = new URL(data.url);
+      const parts = url.pathname.split('/').filter(p => p);
+      if (parts.length >= 2) {
+        data.owner = parts[0];
+        data.name = parts[1];
+      }
+    } catch (e) {
+      alert('Invalid GitHub URL structure.');
+      return;
+    }
+
+    try {
+      const res = await fetch(API_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        hideModal();
+        repoForm.reset();
+        loadRepos();
+      }
+    } catch (e) {
+      alert('Network failure during cluster registration.');
+    }
+  };
+
+  loadRepos();
+</script>

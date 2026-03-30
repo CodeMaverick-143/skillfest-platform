@@ -1,0 +1,135 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { GitPullRequest } from 'lucide-react';
+---
+
+<Layout title="PR Verification">
+  <div class="space-y-16">
+    <!-- ─── Page Header ─── -->
+    <div class="flex items-end justify-between border-b border-slate-100 pb-12">
+      <div>
+        <h2 class="title-primary">
+          Verify <span class="text-indigo-600">Submissions</span>
+        </h2>
+        <p class="sub-header">Review merged pull requests and verify points distribution clusters.</p>
+      </div>
+      
+      <div class="flex items-center gap-3 bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.3)]"></div>
+        <span class="label-caps !text-slate-500 tracking-[0.3em] !text-[9px]">Node Sync Active</span>
+      </div>
+    </div>
+
+    <!-- ─── PR List ─── -->
+    <div class="grid grid-cols-1 gap-8" id="prList">
+      {[1, 2].map(() => (
+        <div class="animate-pulse bg-white h-40 rounded-[40px] border border-slate-100 shadow-sm"></div>
+      ))}
+    </div>
+    
+    <!-- ─── Empty State ─── -->
+    <div id="emptyState" class="p-40 text-center rounded-[64px] border border-dashed border-slate-200 bg-slate-50/30 hidden">
+      <div class="flex flex-col items-center gap-8">
+        <div class="w-24 h-24 rounded-full bg-white flex items-center justify-center text-slate-200 shadow-sm border border-slate-100">
+           <GitPullRequest size={48} />
+        </div>
+        <p class="label-caps !text-slate-400 tracking-[0.5em] animate-pulse">No pending verification signals detected.</p>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script is:inline>
+  const API_BASE = '/api/admin/prs/merged';
+  const prList = document.getElementById('prList');
+  const emptyState = document.getElementById('emptyState');
+
+  async function loadPRs() {
+    try {
+      const token = document.cookie.split('jwt=')[1]?.split(';')[0] || document.cookie.split('skillfest_token=')[1]?.split(';')[0];
+      const headers = {};
+      if (token) {
+         headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(API_BASE, { headers });
+      const prs = await res.json();
+      
+      if (!Array.isArray(prs)) {
+         throw new Error('Failed to load PRs');
+      }
+
+      // Context: April 2026 Sprint
+      const april2026PRs = prs.filter(pr => {
+        if (!pr.merged_at) return false;
+        const date = new Date(pr.merged_at);
+        return date.getFullYear() === 2026 && date.getMonth() === 3; 
+      });
+
+      if (april2026PRs.length === 0) {
+        prList.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      prList.innerHTML = april2026PRs.map(pr => `
+        <div class="card p-10 flex items-center justify-between group relative overflow-hidden transition-all duration-500">
+          <div class="absolute left-0 top-0 bottom-0 w-2.5 bg-slate-950 group-hover:bg-indigo-600 transition-all duration-500"></div>
+          
+          <div class="flex items-center gap-10 pl-6">
+            <div class="w-16 h-16 rounded-[24px] bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500 shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-6">
+                <h3 class="text-2xl font-black text-slate-950 tracking-tighter group-hover:text-indigo-600 transition-colors duration-500">${pr.title} <span class="text-slate-300 ml-3 italic">#${pr.pr_number}</span></h3>
+                <span class="badge-status bg-emerald-50 text-emerald-600 border-emerald-100 !px-4 !py-1 !text-[8px]">Status: Merged</span>
+              </div>
+              <div class="flex items-center gap-8 mt-4">
+                <div class="flex items-center gap-2">
+                   <p class="label-caps !text-slate-400 !text-[8px] tracking-[0.3em]">OWNER</p>
+                   <span class="text-xs font-black text-slate-900 uppercase italic">${pr.user_id}</span>
+                </div>
+                <div class="w-1 h-1 rounded-full bg-slate-200"></div>
+                <div class="flex items-center gap-2">
+                   <p class="label-caps !text-slate-400 !text-[8px] tracking-[0.3em]">CLUSTER</p>
+                   <span class="text-xs font-black text-slate-900 uppercase italic">${pr.repo_name}</span>
+                </div>
+                <div class="w-1 h-1 rounded-full bg-slate-200"></div>
+                <div class="flex items-center gap-3">
+                   <p class="label-caps !text-indigo-400 !text-[8px] tracking-[0.4em]">DELTA</p>
+                   <span class="text-lg font-black text-indigo-600 tabular-nums italic tracking-tighter leading-none">+${pr.points} PTS</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-8 opacity-0 group-hover:opacity-100 translate-x-6 group-hover:translate-x-0 transition-all duration-700 px-8">
+            <a 
+              href="${pr.url}" 
+              target="_blank"
+              class="label-caps !text-slate-400 hover:!text-slate-950 transition-colors uppercase !text-[9px] tracking-[0.4em] flex items-center gap-2"
+            >
+              Analyze Hub ↗
+            </a>
+            <div class="h-12 w-px bg-slate-100 mx-2"></div>
+            <div class="flex gap-4">
+              <button class="w-14 h-14 bg-slate-50 text-slate-300 border border-slate-100 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500 rounded-2xl transition-all flex items-center justify-center">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              </button>
+              <button class="btn-primary !px-10 !py-4.5 !text-[11px] shadow-premium">
+                 Authorize Points
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    } catch (err) {
+      console.error(err);
+      prList.innerHTML = '<div class="card p-32 bg-rose-50 border-rose-100 text-center flex flex-col items-center gap-6"><div class="w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><p class="label-caps !text-rose-600 animate-pulse tracking-[0.5em]">Critical Protocol Error: Submission Cluster Inaccessible</p></div>';
+    }
+  }
+
+  loadPRs();
+</script>

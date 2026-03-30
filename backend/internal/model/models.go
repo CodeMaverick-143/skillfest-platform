@@ -6,18 +6,31 @@ import (
 	"gorm.io/gorm"
 )
 
+// EventConfig is a singleton row controlling global event lifecycle.
+type EventConfig struct {
+	ID               uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	IsEventActive    bool      `gorm:"default:true" json:"is_event_active"`
+	StartDate        time.Time `gorm:"default:null" json:"start_date"`
+	EndDate          time.Time `gorm:"default:null" json:"end_date"`
+	EventTitle       string    `gorm:"default:'SkillFest 2026'" json:"event_title"`
+	EventDescription string    `gorm:"default:''" json:"event_description"`
+	UpdatedAt        time.Time `json:"updated_at"`
+	UpdatedBy        string    `json:"updated_by"`
+}
+
 type User struct {
 	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	GitHubID    string    `gorm:"column:github_id;uniqueIndex;not null" json:"github_id"`
 	Username    string    `gorm:"uniqueIndex;not null" json:"username"`
 	Email       string    `json:"email"`
 	AvatarURL   string    `json:"avatar_url"`
-	Points      int       `gorm:"default:0" json:"points"`
+	Points      int       `gorm:"default:0;index;index:idx_user_status_points" json:"points"`
 	Level       string    `gorm:"default:'Newcomer'" json:"level"`
 	GitHubToken string    `gorm:"column:github_token" json:"github_token"`
 	IsEnrolled  bool      `gorm:"default:false" json:"is_enrolled"`
-	IsHidden    bool      `gorm:"default:false" json:"is_hidden"`
+	IsHidden    bool      `gorm:"default:false;index:idx_user_status_points" json:"is_hidden"`
 	IsAdmin     bool      `gorm:"default:false" json:"is_admin"`
+	IsBanned    bool      `gorm:"default:false;index:idx_user_status_points" json:"is_banned"`
 	Attempts    []IssueAttempt `gorm:"foreignKey:UserID" json:"attempts,omitempty"`
 	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
@@ -25,7 +38,7 @@ type User struct {
 
 type PullRequest struct {
 	ID          uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	UserID      uuid.UUID  `gorm:"type:uuid;not null" json:"user_id"`
+	UserID      uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
 	RepoName    string     `gorm:"uniqueIndex:idx_repo_pr;not null" json:"repo_name"`
 	PRNumber    int        `gorm:"uniqueIndex:idx_repo_pr;not null" json:"pr_number"`
 	Title       string     `json:"title"`
@@ -35,8 +48,8 @@ type PullRequest struct {
 	Labels      string     `json:"labels"` // Comma-separated labels
 	IsOrg       bool       `gorm:"default:false" json:"is_org"`
 	Points      int        `gorm:"default:0" json:"points"`
-	CreatedAt   time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
-	MergedAt    *time.Time `json:"merged_at,omitempty"`
+	CreatedAt   time.Time  `gorm:"default:CURRENT_TIMESTAMP;index" json:"created_at"`
+	MergedAt    *time.Time `gorm:"index" json:"merged_at,omitempty"`
 }
 
 type FresherApplication struct {
@@ -52,11 +65,33 @@ type FresherApplication struct {
 }
 
 type Repository struct {
-	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	Owner     string    `gorm:"uniqueIndex:idx_owner_repo;not null" json:"owner"`
-	Name      string    `gorm:"uniqueIndex:idx_owner_repo;not null" json:"name"`
-	IsActive  bool      `gorm:"default:true" json:"is_active"`
-	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	Owner       string    `gorm:"uniqueIndex:idx_owner_repo;not null" json:"owner"`
+	Name        string    `gorm:"uniqueIndex:idx_owner_repo;not null" json:"name"`
+	URL         string    `json:"url"`
+	OrgName     string    `json:"org_name"`
+	StartDate   time.Time `json:"start_date"`
+	EndDate     time.Time `json:"end_date"`
+	IsActive    bool      `gorm:"default:true;index" json:"is_active"`
+	PointsPerPR int       `gorm:"default:25" json:"points_per_pr"` // Points awarded for a merged pull request
+	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP;index" json:"created_at"`
+}
+
+type Contribution struct {
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	UserID      uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
+	RepoID      uuid.UUID `gorm:"type:uuid;not null;index" json:"repo_id"`
+	Type        string    `json:"type"` // PR, Commit, Issue, Merge
+	ExternalID  string    `gorm:"uniqueIndex" json:"external_id"` // PR number, commit SHA, etc.
+	Points      int       `json:"points"`
+	OccurredAt  time.Time `gorm:"index" json:"occurred_at"`
+	Metadata    string    `gorm:"type:text" json:"metadata"` // JSON string
+	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP;index" json:"created_at"`
+}
+
+type LeaderboardEntry struct {
+	UserID uuid.UUID `json:"user_id"`
+	Points int       `json:"points"`
 }
 
 type IssueAttempt struct {
@@ -67,6 +102,33 @@ type IssueAttempt struct {
 	Status      string    `gorm:"default:'Attempting'" json:"status"` // Attempting, Submitted, Solved
 	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
+}
+
+// EvaluationRubric defines custom scoring categories per repository.
+// If RepoID is nil, this is the global default rubric.
+type EvaluationRubric struct {
+	ID         uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	RepoID     *uuid.UUID `gorm:"type:uuid;uniqueIndex" json:"repo_id,omitempty"` // nil = global default
+	Name       string     `gorm:"not null;default:'Default Rubric'" json:"name"`
+	Categories string     `gorm:"type:text;not null" json:"categories"` // JSON: [{"key":"code_quality","label":"Code Quality","max_score":30,"description":"..."},...]
+	CreatedAt  time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt  time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
+}
+
+// ProjectEvaluation is a manual admin review of a user's contributions in a repository.
+type ProjectEvaluation struct {
+	ID          uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	UserID      uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_eval_user_repo" json:"user_id"`
+	RepoID      *uuid.UUID `gorm:"type:uuid;uniqueIndex:idx_eval_user_repo" json:"repo_id,omitempty"`
+	RubricID    uuid.UUID  `gorm:"type:uuid;not null" json:"rubric_id"`
+	Scores      string     `gorm:"type:text" json:"scores"`       // JSON: {"code_quality":25,"impact":20,...}
+	Notes       string     `gorm:"type:text" json:"notes"`        // JSON: {"code_quality":"Great work", ...}
+	TotalPoints int        `gorm:"default:0" json:"total_points"`
+	Reviewed    bool       `gorm:"default:false;index" json:"reviewed"`
+	ReviewedBy  string     `json:"reviewed_by"` // admin GitHub username
+	SubmittedAt *time.Time `json:"submitted_at,omitempty"`
+	CreatedAt   time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt   time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
@@ -97,9 +159,30 @@ func (r *Repository) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
+func (c *Contribution) BeforeCreate(tx *gorm.DB) (err error) {
+	if c.ID == uuid.Nil {
+		c.ID = uuid.New()
+	}
+	return
+}
+
 func (ia *IssueAttempt) BeforeCreate(tx *gorm.DB) (err error) {
 	if ia.ID == uuid.Nil {
 		ia.ID = uuid.New()
+	}
+	return
+}
+
+func (er *EvaluationRubric) BeforeCreate(tx *gorm.DB) (err error) {
+	if er.ID == uuid.Nil {
+		er.ID = uuid.New()
+	}
+	return
+}
+
+func (pe *ProjectEvaluation) BeforeCreate(tx *gorm.DB) (err error) {
+	if pe.ID == uuid.Nil {
+		pe.ID = uuid.New()
 	}
 	return
 }

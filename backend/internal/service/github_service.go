@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/CodeMaverick-143/skillfest-platform/backend/pkg/github"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
+	gh "github.com/google/go-github/v60/github"
 )
 
 type GitHubService struct {
@@ -20,69 +22,57 @@ func (s *GitHubService) GetClient() *github.Client {
 	return s.client
 }
 
-func (s *GitHubService) FetchAndValidatePRs(ctx context.Context, username string) ([]model.PullRequest, error) {
-	issues, err := s.client.GetUserPRs(ctx, username)
-	if err != nil {
-		return nil, err
+func (s *GitHubService) FetchRepoContributions(ctx context.Context, repo model.Repository) ([]model.Contribution, error) {
+	var contributions []model.Contribution
+
+	// 1. Fetch PRs
+	query := fmt.Sprintf("repo:%s/%s is:pr created:%s..%s", repo.Owner, repo.Name, repo.StartDate.Format("2006-01-02"), repo.EndDate.Format("2006-01-02"))
+	issues, err := s.client.SearchIssues(ctx, query)
+	if err == nil {
+		for _, issue := range issues {
+			contributions = append(contributions, model.Contribution{
+				RepoID:     repo.ID,
+				Type:       "PR",
+				ExternalID: fmt.Sprintf("%d", *issue.Number),
+				Points:     s.calculatePoints(issue.Labels),
+				OccurredAt: issue.GetCreatedAt().Time,
+				Metadata:   fmt.Sprintf(`{"title": %q, "author": %q}`, *issue.Title, *issue.User.Login),
+			})
+		}
 	}
 
-	var validPRs []model.PullRequest
-	for _, issue := range issues {
-		// Basic validation: must be a PR (Search.Issues returns both issues and PRs)
-		if issue.PullRequestLinks == nil {
-			continue
-		}
-
-		// Extract repo name from URL
-		urlParts := strings.Split(*issue.RepositoryURL, "/")
-		repoName := urlParts[len(urlParts)-1]
-
-		// Extract and format labels
-		var labels []string
-		difficulty := "easy" // default
-		points := 10        // default for skillfest label alone
-
-		for _, label := range issue.Labels {
-			name := strings.ToLower(*label.Name)
-			labels = append(labels, name)
-			
-			switch {
-			case strings.Contains(name, "hard"):
-				difficulty = "hard"
-				points = 50
-			case strings.Contains(name, "medium"):
-				difficulty = "medium"
-				points = 25
-			case strings.Contains(name, "easy"):
-				difficulty = "easy"
-				// points already 10
+	// 2. Fetch Commits
+	commits, err := s.client.ListRepoCommits(ctx, repo.Owner, repo.Name, repo.StartDate, repo.EndDate)
+	if err == nil {
+		for _, commit := range commits {
+			author := "unknown"
+			if commit.Author != nil {
+				author = *commit.Author.Login
 			}
+			contributions = append(contributions, model.Contribution{
+				RepoID:     repo.ID,
+				Type:       "Commit",
+				ExternalID: *commit.SHA,
+				Points:     5, // Base points for commit
+				OccurredAt: commit.Commit.Author.GetDate().Time,
+				Metadata:   fmt.Sprintf(`{"message": %q, "author": %q}`, *commit.Commit.Message, author),
+			})
 		}
-
-		state := *issue.State
-		if state == "closed" && issue.PullRequestLinks != nil {
-			// Check if it was actually merged
-			prInfo, _, err := s.client.GhClient.PullRequests.Get(ctx, "nst-sdc", repoName, *issue.Number)
-			if err == nil && prInfo.GetMerged() {
-				state = "merged"
-			}
-		}
-
-		pr := model.PullRequest{
-			RepoName:   repoName,
-			PRNumber:   *issue.Number,
-			Title:      *issue.Title,
-			URL:        *issue.HTMLURL,
-			State:      state,
-			Difficulty: difficulty,
-			Labels:     strings.Join(labels, ","),
-			Points:     points,
-			IsOrg:      true, // Since we search with org:nst-sdc
-			CreatedAt:  issue.GetCreatedAt().Time,
-		}
-		
-		validPRs = append(validPRs, pr)
 	}
 
-	return validPRs, nil
+	return contributions, nil
+}
+
+func (s *GitHubService) calculatePoints(labels []*gh.Label) int {
+	points := 10 // Base
+	for _, label := range labels {
+		name := strings.ToLower(*label.Name)
+		switch {
+		case strings.Contains(name, "hard"):
+			return 50
+		case strings.Contains(name, "medium"):
+			return 25
+		}
+	}
+	return points
 }

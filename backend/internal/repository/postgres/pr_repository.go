@@ -37,3 +37,25 @@ func (r *PostgresPRRepository) GetByRepoAndNumber(ctx context.Context, repo stri
 	}
 	return &pr, nil
 }
+
+func (r *PostgresPRRepository) ListAll(ctx context.Context) ([]model.PullRequest, error) {
+	var prs []model.PullRequest
+	err := r.db.WithContext(ctx).Order("created_at desc").Find(&prs).Error
+	return prs, err
+}
+
+func (r *PostgresPRRepository) GetFilteredByUser(ctx context.Context, userID uuid.UUID) ([]model.PullRequest, error) {
+	var prs []model.PullRequest
+	// Efficiently join pull_requests with repositories to filter in SQL
+	err := r.db.WithContext(ctx).
+		Table("pull_requests").
+		Select("pull_requests.*").
+		Joins("JOIN repositories ON (pull_requests.repo_name = repositories.name OR pull_requests.repo_name = repositories.owner || '/' || repositories.name)").
+		Where("pull_requests.user_id = ?", userID).
+		Where("repositories.is_active = ?", true).
+		Where("pull_requests.merged_at >= repositories.start_date").
+		Where("pull_requests.merged_at <= repositories.end_date").
+		Order("pull_requests.created_at desc").
+		Find(&prs).Error
+	return prs, err
+}

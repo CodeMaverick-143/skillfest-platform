@@ -12,6 +12,7 @@ export default function ProjectsClient() {
   const [filterDifficulty, setFilterDifficulty] = useState("All");
   const [challenges, setChallenges] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetch(getApiUrl("/api/challenges"))
@@ -37,6 +38,14 @@ export default function ProjectsClient() {
     }
     return textMatch && diffMatch;
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterDifficulty]);
+
+  const ITEMS_PER_PAGE = 12;
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedChallenges = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] py-32 px-6 font-mono text-[#1A1A1A] selection:bg-[#1A1A1A]/10 selection:text-black">
@@ -124,7 +133,7 @@ export default function ProjectsClient() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((challenge: any, i: number) => (
+            {paginatedChallenges.map((challenge: any, i: number) => (
               <motion.div 
                 key={challenge.id}
                 initial={{ opacity: 0, scale: 0.98 }}
@@ -156,6 +165,28 @@ export default function ProjectsClient() {
                 </div>
               </motion.div>
             ))}
+          </div>
+        )}
+
+        {!loading && totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-8 pt-8 border-t border-[#EBE6DF]/50">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="px-6 py-2 border border-[#EBE6DF] bg-transparent text-[#1A1A1A] font-bold text-xs uppercase tracking-widest hover:bg-[#1A1A1A] hover:text-[#FDFBF7] transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[#1A1A1A] disabled:cursor-not-allowed cursor-pointer"
+            >
+              Prev
+            </button>
+            <span className="text-[#8C867E] text-[10px] font-bold uppercase tracking-widest px-4">
+              Page {currentPage} / {totalPages}
+            </span>
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="px-6 py-2 border border-[#EBE6DF] bg-[#1A1A1A] text-white font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+            >
+              Next
+            </button>
           </div>
         )}
 

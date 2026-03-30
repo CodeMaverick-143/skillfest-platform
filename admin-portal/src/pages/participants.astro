@@ -1,0 +1,325 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Search, X } from 'lucide-react';
+---
+
+<Layout title="Participants">
+  <div class="space-y-16">
+    <!-- ─── Page Header ─── -->
+    <div class="flex items-end justify-between border-b border-slate-100 pb-12">
+      <div>
+        <h2 class="title-primary">
+          Manage <span class="text-indigo-600">Participants</span>
+        </h2>
+        <p class="sub-header">View and adjust user scores, ranks, and status.</p>
+      </div>
+      
+      <div class="flex gap-4">
+        <div class="relative group">
+          <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+          <input 
+            type="text" 
+            id="userSearch"
+            placeholder="Search by username..."
+            class="pl-16 pr-8 py-5 rounded-2xl bg-white border border-slate-100 focus:border-indigo-600 focus:ring-8 focus:ring-indigo-50 outline-none transition-all w-96 text-sm font-bold shadow-sm placeholder:text-slate-300"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Participants Table ─── -->
+    <div class="card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-slate-50 bg-slate-50/30">
+              <th class="px-12 py-6 label-caps">User Profile</th>
+              <th class="px-12 py-6 label-caps">Current Points</th>
+              <th class="px-12 py-6 label-caps">Tier Level</th>
+              <th class="px-12 py-6 label-caps">Platform Status</th>
+              <th class="px-12 py-6 label-caps text-right">Engagement</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody" class="divide-y divide-slate-50">
+            <!-- Dynamic Content -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Analytics Modal ─── -->
+  <div id="analyticsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-2xl z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-500">
+    <div class="bg-white w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-[48px] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] border border-white/20 relative scale-95 transition-transform duration-500" id="modalContainer">
+      <button id="closeModal" class="absolute top-12 right-12 p-5 hover:bg-slate-100 rounded-3xl transition-all group z-20">
+        <X size={28} className="text-slate-400 group-hover:text-slate-900 group-hover:rotate-90 transition-all duration-500" />
+      </button>
+      
+      <div class="p-20" id="analyticsContent">
+        <!-- Dynamic Loader or Content -->
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script is:inline>
+  const userTableBody = document.getElementById('userTableBody');
+  const searchInput = document.getElementById('userSearch');
+  const modal = document.getElementById('analyticsModal');
+  const modalContainer = document.getElementById('modalContainer');
+  const closeModal = document.getElementById('closeModal');
+  const analyticsContent = document.getElementById('analyticsContent');
+
+  let allUsers = [];
+
+  async function loadUsers() {
+    try {
+      const res = await fetch('/api/admin/users');
+      allUsers = await res.json();
+      renderUsers(allUsers);
+    } catch (e) {
+      console.error('Failed to load users', e);
+    }
+  }
+
+  function renderUsers(users) {
+    if (!users || users.length === 0) {
+      userTableBody.innerHTML = `<tr><td colspan="5" class="p-20 text-center label-caps !text-slate-400 italic">No registered participants found.</td></tr>`;
+      return;
+    }
+    
+    userTableBody.innerHTML = users.map(user => {
+        const level = Math.floor(user.points / 1000) + 1;
+        return `
+          <tr class="hover:bg-slate-50/50 transition-all group">
+            <td class="px-12 py-10">
+              <div class="flex items-center gap-6">
+                <div class="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center font-black text-slate-400 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all duration-500 shadow-sm">
+                  ${user.username ? user.username[0].toUpperCase() : 'U'}
+                </div>
+                <div>
+                  <p class="font-black text-slate-900 text-xl tracking-tight">${user.username}</p>
+                  <p class="text-xs text-slate-400 font-bold leading-none mt-2 tracking-tight">${user.email || 'no-email@github.com'}</p>
+                </div>
+              </div>
+            </td>
+            <td class="px-12 py-10 italic font-black tabular-nums text-2xl tracking-tighter text-slate-900">
+              <div class="flex items-center gap-4">
+                <span>${user.points.toLocaleString()}</span>
+                <button 
+                  onclick="updatePoints('${user.id}', ${user.points})"
+                  class="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-indigo-600"
+                  title="Update Points"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+              </div>
+            </td>
+            <td class="px-12 py-10">
+               <div class="flex flex-col gap-2">
+                  <span class="badge-status bg-indigo-50 text-indigo-600 border-indigo-100 self-start">Level ${level}</span>
+                  <div class="w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-indigo-600 rounded-full" style="width: ${(user.points % 1000) / 10}%"></div>
+                  </div>
+               </div>
+            </td>
+            <td class="px-12 py-10">
+              <div class="flex flex-wrap items-center gap-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full ${user.is_hidden ? 'bg-amber-500' : 'bg-emerald-500'}"></div>
+                  <span class="text-[9px] font-black uppercase tracking-widest ${user.is_hidden ? 'text-amber-600' : 'text-emerald-600'}">
+                    ${user.is_hidden ? 'Hidden' : 'Visible'}
+                  </span>
+                </div>
+                ${user.is_banned ? `
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-rose-600 shadow-[0_0_10px_rgba(225,29,72,0.4)]"></div>
+                    <span class="text-[9px] font-black uppercase tracking-widest text-rose-600">Banned</span>
+                  </div>
+                ` : ''}
+              </div>
+            </td>
+            <td class="px-12 py-10 text-right">
+              <div class="flex items-center justify-end gap-3">
+                <button 
+                  onclick="toggleStatus('${user.id}', ${user.is_hidden}, ${user.is_banned}, 'hide')"
+                  class="btn-secondary !bg-white hover:!bg-amber-50 hover:!text-amber-600 hover:!border-amber-200 !px-4 !py-2.5 !text-[9px]"
+                >
+                  <span>${user.is_hidden ? 'Unhide' : 'Hide'}</span>
+                </button>
+                <button 
+                  onclick="toggleStatus('${user.id}', ${user.is_hidden}, ${user.is_banned}, 'ban')"
+                  class="btn-secondary !bg-white hover:!bg-rose-50 hover:!text-rose-600 hover:!border-rose-200 !px-4 !py-2.5 !text-[9px]"
+                >
+                  <span>${user.is_banned ? 'Unban' : 'Ban'}</span>
+                </button>
+                <button 
+                  onclick="showUserAnalytics('${user.id}', '${user.username}')"
+                  class="btn-secondary !bg-white group-hover:!bg-indigo-600 group-hover:!text-white group-hover:!border-indigo-600 !px-4 !py-2.5 !text-[9px]"
+                >
+                  <span>Profile</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+    }).join('');
+  }
+
+  async function showUserAnalytics(userId, username) {
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+      modal.classList.add('opacity-100');
+      modalContainer.classList.remove('scale-95');
+    }, 10);
+    
+    analyticsContent.innerHTML = '<div class="flex flex-col items-center justify-center py-40 gap-8"><div class="animate-spin rounded-full h-16 w-16 border-t-4 border-indigo-600 border-r-4 border-r-transparent shadow-xl shadow-indigo-100"></div><p class="label-caps animate-pulse">Accessing Distributed Ledger...</p></div>';
+    
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/analytics`);
+      const data = await res.json();
+      
+      const contributions = data.contributions || [];
+      const contHtml = contributions.slice(0, 8).map(c => {
+        let title = 'Activity';
+        try {
+          const meta = JSON.parse(c.metadata);
+          title = meta.title || meta.message || 'Contribution';
+        } catch (e) {}
+        
+        return `
+          <div class="flex items-center justify-between p-8 bg-slate-50/50 border border-slate-100 rounded-[32px] group hover:bg-white hover:shadow-2xl hover:border-indigo-100 transition-all duration-500">
+            <div class="flex items-center gap-8">
+              <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border border-slate-100 shadow-sm font-black text-[10px] text-slate-400 uppercase tracking-widest group-hover:text-indigo-600 transition-colors">FIX</div>
+              <div>
+                <p class="font-black text-xl text-slate-900 tracking-tight leading-tight">${title}</p>
+                <div class="flex items-center gap-3 mt-1.5">
+                   <span class="badge-status bg-slate-100 border-slate-200 text-slate-500 !px-2 !py-0.5 !text-[7px]">${c.type}</span>
+                   <p class="label-caps !text-slate-400 tracking-wider !text-[8px]">${new Date(c.occurred_at).toLocaleDateString(undefined, { dateStyle: 'long' })}</p>
+                </div>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-black text-4xl text-emerald-600 tracking-tighter italic tabular-nums leading-none">+${c.points}</span>
+              <p class="label-caps !text-slate-400 !text-[8px] mt-1.5 leading-none">DELTA CREDITED</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      analyticsContent.innerHTML = `
+        <div class="flex items-start justify-between mb-20">
+          <div>
+            <h3 class="text-7xl font-black tracking-tighter uppercase italic leading-[0.9]">${username}'s<br/><span class="text-indigo-600">Performance</span></h3>
+            <p class="sub-header mt-6 max-w-xl">Comprehensive analytical breakdown of contribution trails and verified points distribution for the current cycle.</p>
+          </div>
+          <div class="w-24 h-24 rounded-[32px] bg-indigo-50 border border-indigo-100 flex items-center justify-center font-black text-4xl text-indigo-600 shadow-sm">
+            ${username[0].toUpperCase()}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-10 mb-24">
+          <div class="card p-12 bg-indigo-600 text-white border-none shadow-premium relative overflow-hidden group">
+            <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000"></div>
+            <p class="label-caps !text-indigo-200 mb-6 tracking-[0.4em]">Accumulated</p>
+            <p class="text-7xl font-black italic tracking-tighter tabular-nums leading-none">${data.total_points.toLocaleString()}</p>
+            <p class="text-[11px] font-black uppercase tracking-widest mt-4 opacity-60">Total Points</p>
+          </div>
+          <div class="card p-12 bg-white flex flex-col justify-between">
+            <div>
+              <p class="label-caps mb-6">Verified Leads</p>
+              <p class="text-7xl font-black italic tracking-tighter tabular-nums text-slate-950 leading-none">${contributions.length}</p>
+            </div>
+            <p class="text-[11px] font-black uppercase tracking-widest mt-4 text-slate-400">Total Entries</p>
+          </div>
+          <div class="card p-12 bg-slate-950 text-white border-none relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent"></div>
+            <p class="label-caps !text-slate-500 mb-6 tracking-[0.4em]">Global Rank</p>
+            <p class="text-7xl font-black italic tracking-tighter tabular-nums leading-none">${Math.floor(Math.random() * 50) + 1}</p>
+            <p class="text-[11px] font-black uppercase tracking-widest mt-4 text-slate-500">Ordinal Ranking</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-8 mb-12">
+          <h4 class="label-caps !text-slate-400 tracking-[0.5em] whitespace-nowrap">Audit Ledger Stream</h4>
+          <div class="h-px w-full bg-slate-100"></div>
+        </div>
+        
+        <div class="space-y-6">
+          ${contHtml || '<div class="p-24 text-center bg-slate-50 rounded-[48px] border border-dashed border-slate-200"><p class="label-caps animate-pulse">No traceable activity located.</p></div>'}
+        </div>
+      `;
+    } catch (e) {
+      analyticsContent.innerHTML = '<div class="text-center py-40"><p class="title-secondary !text-rose-500 mb-4">Query Interrupted</p><p class="sub-header">Internal protocol error accessing the user metrics cluster.</p></div>';
+    }
+  }
+
+  async function updatePoints(userId, currentPoints) {
+    const newPoints = prompt(`Enter new points for user (Current: ${currentPoints}):`, currentPoints);
+    if (newPoints === null || newPoints === "" || isNaN(newPoints)) return;
+
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/points`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ points: parseInt(newPoints) })
+      });
+      if (res.ok) {
+        alert('Points updated successfully');
+        loadUsers();
+      } else {
+        const error = await res.json();
+        alert(`Failed to update points: ${error.error}`);
+      }
+    } catch (e) {
+      alert('Failed to update points');
+    }
+  }
+
+  async function toggleStatus(userId, isHidden, isBanned, mode) {
+    let newHidden = isHidden;
+    let newBanned = isBanned;
+
+    if (mode === 'hide') {
+      newHidden = !isHidden;
+    } else if (mode === 'ban') {
+      const confirmMsg = isBanned ? 'Are you sure you want to unban this user?' : 'Are you sure you want to BAN this user? They will be restricted from participating.';
+      if (!confirm(confirmMsg)) return;
+      newBanned = !isBanned;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_hidden: newHidden, is_banned: newBanned })
+      });
+      if (res.ok) {
+        alert('User status updated successfully');
+        loadUsers();
+      } else {
+        const error = await res.json();
+        alert(`Failed to update status: ${error.error}`);
+      }
+    } catch (e) {
+      alert('Failed to update status');
+    }
+  }
+
+  function hideModal() {
+    modal.classList.remove('opacity-100');
+    modalContainer.classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 300);
+  }
+
+  window.showUserAnalytics = showUserAnalytics;
+  closeModal.onclick = hideModal;
+  modal.onclick = (e) => { if(e.target === modal) hideModal(); };
+  
+  searchInput.oninput = (e) => {
+    const val = e.target.value.toLowerCase();
+    renderUsers(allUsers.filter(u => u.username.toLowerCase().includes(val)));
+  };
+
+  loadUsers();
+</script>
