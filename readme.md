@@ -1,42 +1,69 @@
-# SkillFest Platform
+# 🚀 SkillFest Platform 2026
 
-SkillFest is a Hacktoberfest-style developer event platform built for open-source communities. It automates PR tracking, awards points, and gamifies the contribution experience.
+[![Build Status](https://img.shields.io/badge/Build-Passing-emerald)](/)
+[![License](https://img.shields.io/badge/License-MIT-blue)](/)
+[![Deployment](https://img.shields.io/badge/Deploy-Cloudflare-orange)](/)
 
-## 🚀 Repository Structure
-
-This is a monorepo containing both the backend and frontend components of the SkillFest platform.
-
-- **[backend/](./backend)**: Go-based REST API with GORM and PostgreSQL integration.
-- **[frontend/](./frontend)**: Next.js application with Tailwind CSS, Framer Motion, and a unified Admin dashboard.
-- **[docs/](./docs)**: Comprehensive documentation, system design, and workflows.
-
-## 🛠️ Getting Started
-
-### Prerequisites
-- Go 1.25+
-- Node.js 20+
-- PostgreSQL (NeonDB recommended)
-
-### Backend Setup
-1. `cd backend`
-2. `go mod download`
-3. Create a `.env` file based on `.env.example`
-4. `go run cmd/server/main.go`
-
-### Frontend Setup
-1. `cd frontend`
-2. `npm install`
-3. Create a `.env.local` with `NEXT_PUBLIC_API_URL=http://localhost:8080`
-4. `npm run dev`
-
-## 📖 Documentation
-Detailed documentation is available in the [docs/](./docs) directory:
-- [System Design](./docs/system.md)
-- [Workflow Guide](./docs/workflow.md)
-- [Platform Roadmap](./docs/platform_docs.md)
-
-## 🤝 Contributing
-We welcome contributions! Please check the [docs/workflow.md](./docs/workflow.md) for participation rules.
+**SkillFest** is a premium, high-octane developer event platform designed for open-source communities. Built with modern engineering at its core, it automates pull request tracking, validates developer skills with real-world code analysis, and gamifies the contribution experience through a live, responsive leaderboard.
 
 ---
-Built with ❤️ by the SkillFest Team
+
+## ✨ Key Features
+
+- 🏎️ **Live Performance Tracking**: Automated sync with GitHub repositories via optimized Go backend.
+- 🎨 **Premium UI/UX**: Glassmorphism design system using Next.js, Tailwind v4, and Framer Motion.
+- 📊 **Real-time Leaderboard**: Instant updates on rankings, points, and merged PRs.
+- 🔐 **Secure Onboarding**: Seamless GitHub OAuth integration for all participants.
+- 🛠️ **Admin Hub**: Dedicated Astro-based command center for event configuration and moderation.
+
+---
+
+## 🏗️ Repository Architecture
+
+This is a high-performance monorepo organized for maximum scalability:
+
+- **[`/frontend`](./frontend)**: Next.js App Router | Framer Motion | Tailwind CSS
+- **[`/backend`](./backend)**: High-concurrency Go API | PostgreSQL (NeonDB) | Docker
+- **[`/admin-portal`](./admin-portal)**: Astro.js | TypeScript | Admin Dashboard
+- **[`/docs`](./docs)**: System Architecture, API Specs, and Workflow Guides
+
+---
+
+## 🚦 Quick Start
+
+### 1. Prerequisites
+- **Go 1.25+** (Backend)
+- **Node.js 20+** (Frontend/Admin)
+- **PostgreSQL** (NeonDB or Local)
+- **Cloudflare Tunnel** (For local production-mirror testing)
+
+### 2. Backend Setup
+```bash
+cd backend
+go mod download
+cp .env.example .env # Configure your DB and GitHub OAuth
+go run cmd/server/main.go
+```
+
+### 3. Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev # Runs on http://localhost:3000
+```
+
+---
+
+## 📖 Complete Documentation
+
+Deep-dive into the platform internals via our structured documentation hub:
+
+- 🏠 **[Documentation Hub](./docs/README.md)**: Start here for all internal guides.
+- 🛠️ **[Onboarding & Local Setup](./docs/DEVELOPMENT.md)**: Guide for new contributors.
+- ⚙️ **[System Architecture](./docs/system.md)**: Technical deep-dive.
+- ☁️ **[Deployment Guide](./docs/deploy.md)**: Cloudflare and VPS workflows.
+
+---
+
+Built with ❤️ by the **SkillFest Engineering Team**.  
+*Empowering developers to build the future of Open Source.*
