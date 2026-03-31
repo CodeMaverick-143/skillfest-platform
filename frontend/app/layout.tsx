@@ -27,6 +27,9 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "SkillFest 2026 | Build. Contribute. Grow.",
   description: "Join the ultimate open source challenge. Contribute to nst-sdc repositories and level up your engineering skills.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

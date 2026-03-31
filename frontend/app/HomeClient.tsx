@@ -44,8 +44,8 @@ function useCountdown(targetStr: string | null) {
     if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
     const s = Math.floor(diff / 1000);
     return {
-      days:    Math.floor(s / 86400),
-      hours:   Math.floor((s % 86400) / 3600),
+      days: Math.floor(s / 86400),
+      hours: Math.floor((s % 86400) / 3600),
       minutes: Math.floor((s % 3600) / 60),
       seconds: s % 60,
     };
@@ -61,9 +61,9 @@ function useCountdown(targetStr: string | null) {
 
 // ── Shared features grid ───────────────────────
 const features = [
-  { icon: Zap,           title: "Skill Validation",     desc: "When you submit a PR, SkillFest analyzes your code quality and surfaces your real capabilities securely." },
-  { icon: Shield,        title: "Real-world Projects",  desc: "Drop into open-source projects without breaking your flow. Detect your experience level and grow fast." },
-  { icon: GitPullRequest,title: "Global Leaderboard",   desc: "Designed to handle thousands of developers and rank contributions fairly across all roles." },
+  { icon: Zap, title: "Skill Validation", desc: "When you submit a PR, SkillFest analyzes your code quality and surfaces your real capabilities securely." },
+  { icon: Shield, title: "Real-world Projects", desc: "Drop into open-source projects without breaking your flow. Detect your experience level and grow fast." },
+  { icon: GitPullRequest, title: "Global Leaderboard", desc: "Designed to handle thousands of developers and rank contributions fairly across all roles." },
 ];
 
 function formatDate(dateStr: string | null) {
@@ -94,8 +94,8 @@ function ComingSoonView({ config }: { config: EventStatus }) {
   }, []);
 
   const units = [
-    { label: "Days",    value: countdown.days },
-    { label: "Hours",   value: countdown.hours },
+    { label: "Days", value: countdown.days },
+    { label: "Hours", value: countdown.hours },
     { label: "Minutes", value: countdown.minutes },
     { label: "Seconds", value: countdown.seconds },
   ];
@@ -134,8 +134,8 @@ function ComingSoonView({ config }: { config: EventStatus }) {
           <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-3 mb-14">
             {[
               { icon: Calendar, text: config.start_date ? `${formatDate(config.start_date)} – ${formatDate(config.end_date)}` : "Coming Soon" },
-              { icon: Users,    text: "Open to all contributors" },
-              { icon: Star,     text: "Points · Rankings · Recognition" },
+              { icon: Users, text: "Open to all contributors" },
+              { icon: Star, text: "Points · Rankings · Recognition" },
             ].map(({ icon: Icon, text }) => (
               <div key={text} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-[#EBE6DF] bg-white text-[#6B6661] text-[13px] font-semibold shadow-sm">
                 <Icon className="w-4 h-4 text-[#8C867E]" />
@@ -194,31 +194,26 @@ function ActiveEventView({ config }: { config: EventStatus }) {
   }, []);
 
   const flowSteps = [
-    { label: "< > FORK",   id: 0 },
-    { label: "{} COMMIT",  id: 1 },
-    { label: "∿ PR",       id: 2 },
-    { label: "✔ MERGE",   id: 3 },
+    { label: "< > FORK", id: 0 },
+    { label: "{} COMMIT", id: 1 },
+    { label: "∿ PR", id: 2 },
+    { label: "✔ MERGE", id: 3 },
   ];
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#1A1A1A] selection:bg-[#1A1A1A]/10 selection:text-[#1A1A1A] pb-24 font-sans">
-      <div className="bg-[#1A1A1A] text-white py-2.5 px-6 text-center font-mono text-[11px] font-bold tracking-widest uppercase flex items-center justify-center gap-3">
-        <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-        {config.event_title} is Live — Ends in {countdown.days}d {countdown.hours}h {countdown.minutes}m
-        <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-      </div>
 
       <section className="pt-28 md:pt-40 pb-16 flex flex-col items-center justify-center text-center px-6 relative w-full">
         <motion.div initial="hidden" animate="show" variants={stagger} className="w-full max-w-5xl mx-auto flex flex-col items-center">
 
           <motion.h1 variants={fadeUp} className="text-[40px] md:text-[64px] lg:text-[80px] font-bold leading-[1.05] tracking-tight text-[#1A1A1A] mb-8 mx-auto">
             <span className="text-[#8C867E] font-normal">&gt;</span>Contribute to<br />
-            <span className="text-[#1A1A1A] font-mono font-medium tracking-normal text-[36px] md:text-[60px] lg:text-[72px]">{`{${config.event_title.toLowerCase().replace(/ /g, '_')}}`}</span>
+            <span className="text-[#1A1A1A] font-mono font-medium tracking-normal text-[36px] md:text-[60px] lg:text-[72px]">{`{${(config?.event_title ?? "SkillFest").toLowerCase().replace(/ /g, '_')}}`}</span>
             <span className="animate-pulse font-normal text-[#1A1A1A]">_</span>
           </motion.h1>
 
           <motion.p variants={fadeUp} className="text-[#6B6661] text-base md:text-xl max-w-2xl mx-auto leading-relaxed mb-12 font-medium">
-             SkillFest captures your PRs, evaluates code quality, and tracks your real-world behavior — so you can grow and get hired.
+            SkillFest captures your PRs, evaluates code quality, and tracks your real-world behavior — so you can grow and get hired.
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex justify-center mb-12 w-full">
@@ -290,17 +285,14 @@ function EventEndedView({ config }: { config: EventStatus }) {
   }, []);
 
   const highlights = [
-    { icon: Users,    label: "Contributors",     value: config.stats.total_users },
-    { icon: Code2,    label: "Total Submissions", value: config.stats.total_prs },
-    { icon: Trophy,   label: "Merged PRs",       value: config.stats.merged_prs },
-    { icon: Star,     label: "Active Repos",     value: config.stats.active_repos },
+    { icon: Users, label: "Contributors", value: config.stats.total_users },
+    { icon: Code2, label: "Total Submissions", value: config.stats.total_prs },
+    { icon: Trophy, label: "Merged PRs", value: config.stats.merged_prs },
+    { icon: Star, label: "Active Repos", value: config.stats.active_repos },
   ];
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#1A1A1A] pb-24">
-      <div className="bg-[#1A1A1A] text-white py-2.5 px-6 text-center font-mono text-[11px] font-bold tracking-widest uppercase">
-        {config.event_title} has officially ended — Thank you!
-      </div>
 
       <section className="pt-28 md:pt-44 pb-20 flex flex-col items-center text-center px-6 relative w-full">
         <motion.div initial="hidden" animate="show" variants={stagger} className="w-full max-w-4xl mx-auto flex flex-col items-center">
@@ -376,6 +368,6 @@ export default function HomeClient() {
   if (!config) return null;
 
   if (config.phase === "coming_soon") return <ComingSoonView config={config} />;
-  if (config.phase === "ended")       return <EventEndedView config={config} />;
+  if (config.phase === "ended") return <EventEndedView config={config} />;
   return <ActiveEventView config={config} />;
 }

@@ -20,7 +20,34 @@
   --border-hover: #D6D0C4;
 
   --radius: 0.5rem;
-  /* modern sharp/slightly rounded */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #121212;
+    --foreground: #FDFBF7;
+    --surface-1: #1A1A1A;
+    --surface-2: #222222;
+    --surface-3: #2A2A2A;
+    --surface-4: #333333;
+    --accent: #FDFBF7;
+    --accent-2: #8C867E;
+    --border: #333333;
+    --border-hover: #444444;
+  }
+}
+
+.dark {
+  --background: #121212;
+  --foreground: #FDFBF7;
+  --surface-1: #1A1A1A;
+  --surface-2: #222222;
+  --surface-3: #2A2A2A;
+  --surface-4: #333333;
+  --accent: #FDFBF7;
+  --accent-2: #8C867E;
+  --border: #333333;
+  --border-hover: #444444;
 }
 
 * {
