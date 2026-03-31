@@ -21,7 +21,9 @@ import (
 	"golang.org/x/oauth2"
 	gh_oauth "golang.org/x/oauth2/github"
 	"golang.org/x/oauth2/google"
+	"golang.org/x/time/rate"
 	"gorm.io/gorm"
+	"sync"
 )
 
 type Server struct {
@@ -44,6 +46,8 @@ type Server struct {
 	frontendURL      string
 	evaluationRepo   repository.EvaluationRepository
 	db               *gorm.DB
+	limiters         map[string]*rate.Limiter
+	mu               sync.Mutex
 }
 
 func NewServer(cfg *config.Config, db *gorm.DB, userRepo repository.UserRepository, prRepo repository.PRRepository, repoRepo repository.RepositoryRepository, contributionRepo repository.ContributionRepository, authService *service.AuthService, adminService *service.AdminService, githubService *service.GitHubService, syncWorker *service.SyncWorker, loggingService service.LoggingService, cacheService service.CacheService, analyticsService *service.AnalyticsService, evaluationRepo repository.EvaluationRepository) *Server {
@@ -88,6 +92,7 @@ func NewServer(cfg *config.Config, db *gorm.DB, userRepo repository.UserReposito
 			Endpoint:     google.Endpoint,
 			Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"},
 		},
+		limiters: make(map[string]*rate.Limiter),
 	}
 	s.setupRouter()
 	return s
@@ -141,6 +146,13 @@ func (s *Server) setupRouter() {
 		"127.0.0.1", // local dev
 	})
 	s.router.Use(gzip.Gzip(gzip.DefaultCompression))
+	
+	// Security & Resilience Middlewares
+	s.router.Use(s.securityHeadersMiddleware())
+	s.router.Use(s.rateLimitMiddleware())
+
+	// Health check for Cloudflare/LB monitoring
+	s.router.GET("/health", s.healthCheck)
 
 	api := s.router.Group("/api")
 	{
@@ -919,4 +931,66 @@ func (s *Server) adminMiddleware() gin.HandlerFunc {
 		}
 		c.Next()
 	}
+}
+
+func (s *Server) healthCheck(c *gin.Context) {
+	// Check DB connection
+	db, err := s.db.DB()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "unhealthy", "error": "Database connection error"})
+		return
+	}
+	if err := db.Ping(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "unhealthy", "error": "Database ping failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":    "healthy",
+		"timestamp": time.Now().Format(time.RFC3339),
+		"version":   "1.0.0",
+	})
+}
+
+func (s *Server) securityHeadersMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-XSS-Protection", "1; mode=block")
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://avatars.githubusercontent.com; connect-src 'self' "+s.cfg.BackendURL)
+		
+		if c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https" {
+			c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+		}
+
+		c.Next()
+	}
+}
+
+func (s *Server) rateLimitMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
+		limiter := s.getLimiter(ip)
+		if !limiter.Allow() {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+func (s *Server) getLimiter(ip string) *rate.Limiter {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	limiter, exists := s.limiters[ip]
+	if !exists {
+		// Allow 5 requests per second with a burst of 10
+		limiter = rate.NewLimiter(5, 10)
+		s.limiters[ip] = limiter
+	}
+
+	return limiter
 }

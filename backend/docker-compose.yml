@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - ADMIN_GITHUB_CLIENT_ID=${ADMIN_GITHUB_CLIENT_ID}
+      - ADMIN_GITHUB_CLIENT_SECRET=${ADMIN_GITHUB_CLIENT_SECRET}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - BACKEND_URL=${BACKEND_URL}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - MONGODB_URI=${MONGODB_URI}
+      - REDIS_URL=${REDIS_URL}
+      - ADMIN_FRONTEND_URL=${ADMIN_FRONTEND_URL}
+      - ADMIN_GITHUB_USERNAMES=${ADMIN_GITHUB_USERNAMES}
+      - ADDITIONAL_CORS_ORIGINS=${ADDITIONAL_CORS_ORIGINS}
+      - SKIP_DB_MIGRATION=false
+    networks:
+      - skillfest-network
+
+networks:
+  skillfest-network:
+    driver: bridge
