@@ -1,6 +1,6 @@
 'use client';
 
-import { Github, Twitter, Mail, ArrowUpRight } from "lucide-react";
+import { Github, Mail, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 export function Footer() {
@@ -16,8 +16,8 @@ export function Footer() {
               The open source contribution engine for builders.
             </p>
             <div className="flex gap-4">
-              {[Github, Twitter, Mail].map((Icon, i) => (
-                <Link key={i} href="#" className="flex items-center justify-center text-[#6B6661] hover:text-[#1A1A1A] transition-colors">
+              {[{Icon: Github, href: "https://github.com/nst-sdc"}, {Icon: Mail, href: "mailto:support@nstsdc.org"}].map(({Icon, href}, i) => (
+                <Link key={i} href={href} target={href.startsWith('http') ? "_blank" : undefined} rel={href.startsWith('http') ? "noopener noreferrer" : undefined} className="flex items-center justify-center text-[#6B6661] hover:text-[#1A1A1A] transition-colors">
                   <Icon className="w-4 h-4" />
                 </Link>
               ))}
@@ -28,7 +28,7 @@ export function Footer() {
             <h4 className="text-[10px] font-bold text-[#1A1A1A] uppercase tracking-widest mb-6">Platform</h4>
             <ul className="space-y-4 text-xs text-[#6B6661]">
               {[["Rules", "/rules"], ["Projects", "/projects"], ["Leaderboard", "/leaderboard"], ["Apply", "/fresher-application"]].map(([n, h]) => (
-                <li key={n} className="flex items-center gap-2 group"><span className="text-[#C4BFAF] group-hover:text-[#1A1A1A] transition-colors">&gt;</span><Link href={h} className="hover:text-[#1A1A1A] transition-colors">{n}</Link></li>
+                <li key={n} className="flex items-center gap-2 group"><span className="text-[#C4BFAF] group-hover:text-[#1A1A1A] transition-colors">&gt;</span><Link href={h} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="hover:text-[#1A1A1A] transition-colors">{n}</Link></li>
               ))}
             </ul>
           </div>
@@ -42,12 +42,8 @@ export function Footer() {
           </div>
         </div>
         
-        <div className="pt-8 border-t border-[#EBE6DF] flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] font-bold tracking-widest uppercase text-[#8C867E]">
+        <div className="pt-8 border-t border-[#EBE6DF] flex flex-col sm:flex-row justify-center items-center gap-4 text-[10px] font-bold tracking-widest uppercase text-[#8C867E]">
           <p>© {new Date().getFullYear()} SKILLFEST · <span className="text-[#1A1A1A]">nst-sdc</span></p>
-          <div className="flex gap-8">
-            <Link href="#" className="hover:text-[#1A1A1A] transition-colors">Privacy</Link>
-            <Link href="#" className="hover:text-[#1A1A1A] transition-colors">Terms</Link>
-          </div>
         </div>
       </div>
     </footer>

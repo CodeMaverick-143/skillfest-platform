@@ -5,6 +5,7 @@ import { Footer } from "@/components/footer";
 import { Providers } from "@/components/providers";
 import { EventGate } from "@/components/event-gate";
 import { ConditionalChrome } from "../components/conditional-chrome";
+import { ScrollToTop } from "@/components/scroll-to-top";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -41,6 +42,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased selection:bg-white/20 selection:text-white`}>
         <Providers>
+          <ScrollToTop />
           <EventGate>
             <ConditionalChrome>
               {children}
