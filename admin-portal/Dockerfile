@@ -8,7 +8,7 @@ ARG PUBLIC_BACKEND_URL=https://backend-skillfest.nstsdc.org
 ENV PUBLIC_BACKEND_URL=$PUBLIC_BACKEND_URL
 
 COPY package*.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 COPY . .
 RUN npm run build
