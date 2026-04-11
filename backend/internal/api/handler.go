@@ -284,7 +284,7 @@ func (s *Server) githubCallback(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("skillfest_token", jwtToken, 3600*72, "/", os.Getenv("COOKIE_DOMAIN"), false, false)
+	c.SetCookie("skillfest_token", jwtToken, 3600*72, "/", os.Getenv("COOKIE_DOMAIN"), true, false)
 	c.Redirect(http.StatusTemporaryRedirect, s.cfg.FrontendURL+"/dashboard")
 }
 
@@ -356,7 +356,7 @@ func (s *Server) adminGithubCallback(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("skillfest_token", jwtToken, 3600*72, "/", os.Getenv("COOKIE_DOMAIN"), false, false)
+	c.SetCookie("skillfest_token", jwtToken, 3600*72, "/", os.Getenv("COOKIE_DOMAIN"), true, false)
 	c.Redirect(http.StatusTemporaryRedirect, s.cfg.AdminFrontendURL+"/")
 }
 
