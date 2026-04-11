@@ -38,7 +38,7 @@ services:
       GITHUB_SYSTEM_TOKEN: ${GITHUB_SYSTEM_TOKEN}
       CLOSE_EVENT_PASSWORD: ${CLOSE_EVENT_PASSWORD}
     ports:
-      - "30002:8080"
+      - "5000:8080"
     depends_on:
       - db
       - redis
@@ -53,7 +53,7 @@ services:
         NEXT_PUBLIC_BACKEND_URL: https://backend-skillfest.nstsdc.org
     restart: always
     ports:
-      - "30000:3000"
+      - "3000:3000"
     networks:
       - skillfest-net
 
@@ -65,7 +65,7 @@ services:
         PUBLIC_BACKEND_URL: https://backend-skillfest.nstsdc.org
     restart: always
     ports:
-      - "30001:80"
+      - "4321:80"
     networks:
       - skillfest-net
 
