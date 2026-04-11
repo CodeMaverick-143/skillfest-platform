@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"time"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
@@ -37,10 +38,11 @@ func (r *PostgresUserRepository) GetByGitHubID(ctx context.Context, githubID str
 	return &u, nil
 }
 
-func (r *PostgresUserRepository) UpdatePoints(ctx context.Context, userID uuid.UUID, points int, level string) error {
+func (r *PostgresUserRepository) UpdatePoints(ctx context.Context, userID uuid.UUID, points int, level string, lastScoreUpdatedAt time.Time) error {
 	return r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
-		"points": points,
-		"level":  level,
+		"points":                  points,
+		"level":                   level,
+		"last_score_updated_at": lastScoreUpdatedAt,
 	}).Error
 }
 
@@ -59,13 +61,13 @@ func (r *PostgresUserRepository) Update(ctx context.Context, user *model.User) e
 
 func (r *PostgresUserRepository) GetLeaderboard(ctx context.Context, limit int) ([]model.User, error) {
 	var users []model.User
-	err := r.db.WithContext(ctx).Where("is_hidden = ? AND is_banned = ?", false, false).Order("points desc").Limit(limit).Find(&users).Error
+	err := r.db.WithContext(ctx).Where("is_hidden = ? AND is_banned = ?", false, false).Order("points desc, last_score_updated_at asc, id asc").Limit(limit).Find(&users).Error
 	return users, err
 }
 
 func (r *PostgresUserRepository) List(ctx context.Context) ([]model.User, error) {
 	var users []model.User
-	err := r.db.WithContext(ctx).Order("points desc").Find(&users).Error
+	err := r.db.WithContext(ctx).Order("points desc, last_score_updated_at asc, id asc").Find(&users).Error
 	return users, err
 }
 

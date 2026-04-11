@@ -129,7 +129,7 @@ func (s *Server) closeEvent(c *gin.Context) {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Event control not configured"})
 		return
 	}
-	if strings.TrimSpace(input.Password) != s.cfg.CloseEventPassword {
+	if strings.TrimSpace(input.Password) != strings.TrimSpace(s.cfg.CloseEventPassword) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
 		return
 	}

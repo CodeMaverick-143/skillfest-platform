@@ -1,6 +1,6 @@
 'use client';
 
-import { Github, Mail, ArrowUpRight } from "lucide-react";
+import { Github, Mail, ArrowUpRight, Linkedin, Instagram } from "lucide-react";
 import Link from "next/link";
 
 export function Footer() {
@@ -15,9 +15,23 @@ export function Footer() {
             <p className="text-[#6B6661] text-xs leading-relaxed max-w-xs">
               The open source contribution engine for builders.
             </p>
+            <p className="text-[#6B6661] text-[10px] font-bold tracking-widest uppercase truncate max-w-xs">
+              <a href="mailto:support@nstsdc.org" className="hover:text-[#1A1A1A] transition-colors">support@nstsdc.org</a>
+            </p>
             <div className="flex gap-4">
-              {[{Icon: Github, href: "https://github.com/nst-sdc"}, {Icon: Mail, href: "mailto:support@nstsdc.org"}].map(({Icon, href}, i) => (
-                <Link key={i} href={href} target={href.startsWith('http') ? "_blank" : undefined} rel={href.startsWith('http') ? "noopener noreferrer" : undefined} className="flex items-center justify-center text-[#6B6661] hover:text-[#1A1A1A] transition-colors">
+              {[
+                { Icon: Github, href: "https://github.com/nst-sdc" },
+                { Icon: Instagram, href: "https://www.instagram.com/devclub.nst" },
+                { Icon: Linkedin, href: "https://www.linkedin.com/company/nst-sdc" },
+                { Icon: Mail, href: "mailto:support@nstsdc.org" }
+              ].map(({ Icon, href }, i) => (
+                <Link 
+                  key={i} 
+                  href={href} 
+                  target={href.startsWith('http') ? "_blank" : undefined} 
+                  rel={href.startsWith('http') ? "noopener noreferrer" : undefined} 
+                  className="flex items-center justify-center text-[#6B6661] hover:text-[#1A1A1A] transition-colors"
+                >
                   <Icon className="w-4 h-4" />
                 </Link>
               ))}

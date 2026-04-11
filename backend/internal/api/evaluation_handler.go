@@ -2,10 +2,11 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
-	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -187,17 +188,21 @@ func (s *Server) submitEvaluation(c *gin.Context) {
 		return
 	}
 	user.Points += eval.TotalPoints
+	user.LastScoreUpdatedAt = time.Now()
 	if err := s.userRepo.Update(c.Request.Context(), user); err != nil {
 		c.JSON(http.StatusOK, gin.H{"evaluation": eval, "warning": "Points not credited: update failed"})
 		return
 	}
 
-	// Log the action
+	// Audit Log
 	if s.loggingService != nil {
-		_ = s.loggingService.LogAction(c.Request.Context(), service.AdminLog{
-			UserID:   reviewerUsername,
-			Action:   "evaluation_submitted",
-			Metadata: map[string]interface{}{"eval_id": evalID, "target_user_id": eval.UserID, "points": eval.TotalPoints},
+		adminVal, _ := c.Get("user")
+		admin := adminVal.(*model.User)
+		s.loggingService.LogAuditAction(c.Request.Context(), &model.AuditLog{
+			AdminID:  admin.ID,
+			Action:   "SUBMIT_EVALUATION",
+			TargetID: eval.UserID.String(),
+			NewValue: fmt.Sprintf("points:%d, eval_id:%s", eval.TotalPoints, eval.ID),
 		})
 	}
 

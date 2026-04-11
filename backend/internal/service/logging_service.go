@@ -2,55 +2,41 @@ package service
 
 import (
 	"context"
-	"time"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
+	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/repository"
 )
 
-type AdminLog struct {
-	UserID    string      `json:"user_id" bson:"user_id"`
-	Action    string      `json:"action" bson:"action"`
-	Metadata  interface{} `json:"metadata" bson:"metadata"`
-	Timestamp time.Time   `json:"timestamp" bson:"timestamp"`
-}
-
 type LoggingService interface {
-	LogAction(ctx context.Context, log AdminLog) error
-	GetLogs(ctx context.Context, limit int) ([]AdminLog, error)
+	LogAuditAction(ctx context.Context, log *model.AuditLog) error
+	LogSyncOperation(ctx context.Context, log *model.SyncLog) error
+	GetAuditLogs(ctx context.Context, limit, offset int) ([]model.AuditLog, error)
+	GetSyncLogs(ctx context.Context, limit, offset int) ([]model.SyncLog, error)
 }
 
-type MongoLoggingService struct {
-	collection *mongo.Collection
+type PostgresLoggingService struct {
+	auditRepo repository.AuditLogRepository
+	syncRepo  repository.SyncLogRepository
 }
 
-func NewMongoLoggingService(uri string) (*MongoLoggingService, error) {
-	clientOptions := options.Client().ApplyURI(uri)
-	client, err := mongo.Connect(context.Background(), clientOptions)
-	if err != nil {
-		return nil, err
+func NewPostgresLoggingService(auditRepo repository.AuditLogRepository, syncRepo repository.SyncLogRepository) *PostgresLoggingService {
+	return &PostgresLoggingService{
+		auditRepo: auditRepo,
+		syncRepo:  syncRepo,
 	}
-	
-	collection := client.Database("skillfest").Collection("admin_logs")
-	return &MongoLoggingService{collection: collection}, nil
 }
 
-func (s *MongoLoggingService) LogAction(ctx context.Context, log AdminLog) error {
-	log.Timestamp = time.Now()
-	_, err := s.collection.InsertOne(ctx, log)
-	return err
+func (s *PostgresLoggingService) LogAuditAction(ctx context.Context, log *model.AuditLog) error {
+	return s.auditRepo.Create(ctx, log)
 }
 
-func (s *MongoLoggingService) GetLogs(ctx context.Context, limit int) ([]AdminLog, error) {
-	opts := options.Find().SetLimit(int64(limit)).SetSort(map[string]interface{}{"timestamp": -1})
-	cursor, err := s.collection.Find(ctx, map[string]interface{}{}, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
+func (s *PostgresLoggingService) LogSyncOperation(ctx context.Context, log *model.SyncLog) error {
+	return s.syncRepo.Create(ctx, log)
+}
 
-	var logs []AdminLog
-	if err := cursor.All(ctx, &logs); err != nil {
-		return nil, err
-	}
-	return logs, nil
+func (s *PostgresLoggingService) GetAuditLogs(ctx context.Context, limit, offset int) ([]model.AuditLog, error) {
+	return s.auditRepo.List(ctx, limit, offset)
+}
+
+func (s *PostgresLoggingService) GetSyncLogs(ctx context.Context, limit, offset int) ([]model.SyncLog, error) {
+	return s.syncRepo.List(ctx, limit, offset)
 }

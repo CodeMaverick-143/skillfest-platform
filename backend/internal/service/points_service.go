@@ -2,45 +2,59 @@ package service
 
 import (
 	"context"
+	"time"
 	"github.com/google/uuid"
+	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/repository"
 )
 
 type PointsService struct {
-	userRepo   repository.UserRepository
-	prRepo     repository.PRRepository
-	repoRepo   repository.RepositoryRepository
+	userRepo         repository.UserRepository
+	prRepo           repository.PRRepository
+	repoRepo         repository.RepositoryRepository
+	contributionRepo repository.ContributionRepository
 }
 
-func NewPointsService(userRepo repository.UserRepository, prRepo repository.PRRepository, repoRepo repository.RepositoryRepository) *PointsService {
-	return &PointsService{userRepo: userRepo, prRepo: prRepo, repoRepo: repoRepo}
+func NewPointsService(userRepo repository.UserRepository, prRepo repository.PRRepository, repoRepo repository.RepositoryRepository, contributionRepo repository.ContributionRepository) *PointsService {
+	return &PointsService{userRepo: userRepo, prRepo: prRepo, repoRepo: repoRepo, contributionRepo: contributionRepo}
 }
 
 func (s *PointsService) RecalculateUserLevel(ctx context.Context, userID uuid.UUID) error {
-	// Use the optimized SQL-level filtering method
-	prs, err := s.prRepo.GetFilteredByUser(ctx, userID)
+	// Use the optimized SQL-level filtering method to get all valid contributions
+	contributions, err := s.contributionRepo.GetFilteredByUser(ctx, userID)
 	if err != nil {
 		return err
 	}
 
 	totalPoints := 0
-	for _, pr := range prs {
-		if pr.State == "merged" {
-			totalPoints += pr.Points
+	var lastContribution time.Time
+
+	for _, c := range contributions {
+		totalPoints += c.Points
+		if c.OccurredAt.After(lastContribution) {
+			lastContribution = c.OccurredAt
 		}
 	}
 
-	level := "Newcomer"
-	switch {
-	case totalPoints >= 500:
-		level = "Expert"
-	case totalPoints >= 300:
-		level = "Advanced"
-	case totalPoints >= 150:
-		level = "Intermediate"
-	case totalPoints >= 50:
-		level = "Beginner"
+	if lastContribution.IsZero() {
+		user, err := s.userRepo.GetByID(ctx, userID)
+		if err == nil {
+			lastContribution = user.CreatedAt
+		} else {
+			lastContribution = time.Now()
+		}
 	}
 
-	return s.userRepo.UpdatePoints(ctx, userID, totalPoints, level)
+	level := "Explorer"
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err == nil {
+		user.Points = totalPoints
+		level = user.CalculateLevel()
+	} else {
+		// Fallback logic if user not found (shouldn't happen here)
+		tempUser := model.User{Points: totalPoints}
+		level = tempUser.CalculateLevel()
+	}
+
+	return s.userRepo.UpdatePoints(ctx, userID, totalPoints, level, lastContribution)
 }

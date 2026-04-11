@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 	"github.com/google/uuid"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/repository"
@@ -91,16 +92,20 @@ func (s *AdminService) UpdateUserPoints(ctx context.Context, userID uuid.UUID, p
 		return err
 	}
 	user.Points = points
+	user.Level = user.CalculateLevel()
+	user.LastScoreUpdatedAt = time.Now()
 	return s.userRepo.Update(ctx, user)
 }
 
-func (s *AdminService) UpdateUserStatus(ctx context.Context, userID uuid.UUID, isHidden bool, isBanned bool) error {
+func (s *AdminService) UpdateUserStatus(ctx context.Context, userID uuid.UUID, isHidden bool, isBanned bool, isAdmin bool, isReviewer bool) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return err
 	}
 	user.IsHidden = isHidden
 	user.IsBanned = isBanned
+	user.IsAdmin = isAdmin
+	user.IsReviewer = isReviewer
 	return s.userRepo.Update(ctx, user)
 }
 

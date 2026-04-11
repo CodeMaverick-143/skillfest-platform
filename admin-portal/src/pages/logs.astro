@@ -1,59 +1,57 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import { Terminal, Clock, Shield, Search } from "lucide-react";
+import Layout from '../layouts/Layout.astro';
+import { Terminal } from 'lucide-react';
 ---
 
 <Layout title="Activity Logs">
-  <div class="space-y-16">
+  <div class="space-y-12">
     <!-- ─── Page Header ─── -->
-    <div class="flex items-end justify-between border-b border-slate-100 pb-12">
+    <div class="flex items-end justify-between border-b border-zinc-100 pb-10">
       <div>
-        <h2 class="title-primary">
-          System <span class="text-indigo-600">Logs</span>
+        <h2 class="title-primary !text-4xl text-zinc-950">
+          Security <span class="text-indigo-600">Audits</span>
         </h2>
-        <p class="sub-header">
-          Audit trail for all administrative actions recorded in the core ledger.
+        <p class="sub-header text-zinc-500 mt-2">
+          Real-time ledger of administrative authorizations and contribution sync signals.
         </p>
       </div>
       
-      <div class="flex items-center gap-4 bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
-        <div class="w-3 h-3 rounded-full bg-indigo-600 animate-pulse shadow-[0_0_10px_rgba(79,70,229,0.3)]"></div>
-        <span class="label-caps !text-slate-500 tracking-[0.3em] !text-[9px]">Live Audit Stream</span>
+      <div class="flex items-center gap-2.5 bg-zinc-50 px-4 py-2 rounded-xl border border-zinc-200 shadow-sm">
+        <div class="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></div>
+        <span class="label-caps !text-indigo-700 tracking-wider text-[10px]">Active Audit Stream</span>
       </div>
     </div>
 
     <!-- ─── Terminal Section ─── -->
-    <div class="card bg-[#0A0B10] text-white p-0 overflow-hidden font-mono border-slate-800 shadow-premium relative group">
-      <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent pointer-events-none"></div>
-      
+    <div class="bg-zinc-950 rounded-[32px] overflow-hidden font-mono shadow-2xl relative border border-zinc-800">
       <!-- Terminal Header -->
-      <div class="p-8 bg-white/5 border-b border-white/5 flex items-center justify-between relative z-10">
+      <div class="px-8 py-5 bg-zinc-900/50 border-b border-zinc-800 flex items-center justify-between">
         <div class="flex items-center gap-4">
-          <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-            <Terminal size={16} className="text-indigo-400" />
+          <div class="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center border border-zinc-700">
+            <Terminal size={16} className="text-zinc-400" />
           </div>
-          <span class="label-caps !text-slate-400 tracking-[0.4em] !text-[9px]">Security Audit ledger.v2</span>
+          <span class="label-caps !text-zinc-500 tracking-widest text-[9px]">Ledger Protocol v2.0</span>
         </div>
         <div class="flex gap-2">
-          <div class="w-3.5 h-3.5 rounded-full bg-rose-500/20 border border-rose-500/40"></div>
-          <div class="w-3.5 h-3.5 rounded-full bg-amber-500/20 border border-amber-500/40"></div>
-          <div class="w-3.5 h-3.5 rounded-full bg-emerald-500/20 border border-emerald-500/40"></div>
+          <div class="w-3 h-3 rounded-full bg-zinc-800"></div>
+          <div class="w-3 h-3 rounded-full bg-zinc-800"></div>
+          <div class="w-3 h-3 rounded-full bg-zinc-800"></div>
         </div>
       </div>
 
       <!-- Logs Container -->
-      <div class="divide-y divide-white/5 min-h-[600px] relative z-10" id="logsContainer">
-        <div class="flex flex-col items-center justify-center p-40 gap-8">
-          <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-indigo-500 border-r-2 border-r-transparent shadow-xl shadow-indigo-500/10"></div>
-          <p class="label-caps animate-pulse !text-slate-500 tracking-[0.5em]">Initializing encrypted sync...</p>
+      <div class="divide-y divide-zinc-900 min-h-[500px]" id="logsContainer">
+        <div class="flex flex-col items-center justify-center p-40 gap-6">
+          <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-indigo-500 border-r-2 border-r-transparent"></div>
+          <p class="label-caps !text-zinc-600 animate-pulse tracking-widest text-[10px]">Syncing Encrypted Ledger...</p>
         </div>
       </div>
 
       <!-- Terminal Footer -->
-      <div class="p-8 bg-white/5 border-t border-white/5 text-center relative z-10">
+      <div class="px-8 py-6 bg-zinc-900/30 border-t border-zinc-900 flex items-center justify-center">
         <button
           id="loadMoreBtn"
-          class="label-caps !text-slate-500 hover:!text-indigo-400 transition-all tracking-[0.5em] !text-[9px] hover:scale-105 active:scale-95"
+          class="px-6 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-500 font-bold text-[9px] uppercase tracking-widest hover:text-zinc-300 hover:border-zinc-700 transition-all active:scale-95"
         >
           Force Re-Sync Engine
         </button>
@@ -73,33 +71,31 @@ import { Terminal, Clock, Shield, Search } from "lucide-react";
 
       if (!Array.isArray(logs) || logs.length === 0) {
         logsContainer.innerHTML =
-          '<div class="p-40 text-center flex flex-col items-center gap-6"><p class="label-caps opacity-30 tracking-[0.4em]">No audit logs detected in the ledger.</p></div>';
+          '<div class="p-40 text-center flex flex-col items-center gap-4"><p class="label-caps !text-zinc-600 italic tracking-widest text-[10px]">No audit entries identified.</p></div>';
         return;
       }
 
       logsContainer.innerHTML = logs
         .map((log) => {
-          const time = new Date(log.created_at).toLocaleTimeString(undefined, { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-          const isAdminAction = log.action.includes("/api/admin");
+          const date = new Date(log.created_at);
+          const time = date.toLocaleTimeString(undefined, { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          const isAdminAction = log.action.includes("/admin");
           const status = log.status || "200";
 
           return `
-          <div class="px-10 py-6 flex items-center justify-between hover:bg-white/[0.03] transition-all group">
-            <div class="flex items-center gap-10 min-w-0 flex-1">
-              <div class="text-indigo-500/30 text-[11px] w-24 font-black tabular-nums group-hover:text-indigo-400 transition-colors duration-300">[ ${time} ]</div>
-              <div class="flex items-center gap-4 flex-shrink-0">
-                <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-indigo-500/30 transition-all duration-300">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 group-hover:text-indigo-400 transition-colors duration-300"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </div>
-                <span class="text-xs font-black text-slate-400 truncate max-w-[140px] group-hover:text-white transition-colors duration-300 uppercase">${log.user_id}</span>
+          <div class="px-8 py-4 flex items-center justify-between hover:bg-zinc-900/50 transition-all group border-l-2 border-transparent hover:border-indigo-600">
+            <div class="flex items-center gap-8 min-w-0 flex-1">
+              <div class="text-zinc-600 text-[10px] w-20 font-bold tabular-nums group-hover:text-zinc-400 transition-colors uppercase">${time}</div>
+              <div class="flex items-center gap-3 flex-shrink-0">
+                <span class="text-[11px] font-bold text-zinc-500 group-hover:text-zinc-200 transition-colors truncate max-w-[120px] uppercase tracking-tight">${log.user_id}</span>
               </div>
-              <div class="text-[12px] truncate ml-6 flex gap-6 items-center">
-                <span class="font-black italic tracking-tight ${isAdminAction ? "text-indigo-400" : "text-slate-500"} group-hover:translate-x-1 transition-transform duration-300">${log.action}</span>
-                <span class="text-slate-700 font-medium group-hover:text-slate-500 transition-colors duration-300 truncate max-w-md">${log.metadata ? JSON.stringify(log.metadata) : ""}</span>
+              <div class="text-[12px] truncate ml-4 flex gap-6 items-center flex-1">
+                <span class="font-bold tracking-tight ${isAdminAction ? "text-indigo-400" : "text-zinc-400"} group-hover:translate-x-1 transition-transform duration-300">${log.action}</span>
+                <span class="text-zinc-700 font-medium group-hover:text-zinc-500 transition-colors truncate max-w-sm text-[11px]">${log.metadata ? JSON.stringify(log.metadata) : ""}</span>
               </div>
             </div>
-            <div class="label-caps !text-[9px] px-4 py-1.5 rounded-lg border tabular-nums transition-all duration-300 ${status.startsWith("2") ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 group-hover:bg-emerald-500/20" : "bg-rose-500/10 text-rose-400 border-rose-500/20 group-hover:bg-rose-500/20"}">
-              HTTP ${status}
+            <div class="px-3 py-1 rounded-md font-bold text-[9px] uppercase tracking-widest border transition-all ${status.startsWith("2") ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"}">
+              ${status}
             </div>
           </div>
         `;
@@ -107,12 +103,12 @@ import { Terminal, Clock, Shield, Search } from "lucide-react";
         .join("");
     } catch (e) {
       logsContainer.innerHTML =
-        '<div class="p-40 text-center flex flex-col items-center gap-6"><div class="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center border border-rose-500/20"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-rose-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><p class="label-caps !text-rose-500 animate-pulse tracking-[0.5em]">Security Protocol: Audit Engine Offline</p></div>';
+        '<div class="p-40 text-center flex flex-col items-center gap-4"><p class="label-caps !text-rose-500 animate-pulse tracking-widest">Protocol Error: Ledger Offline</p></div>';
     }
   }
 
   loadMoreBtn.onclick = () => {
-    loadMoreBtn.innerText = "FORCE RE-SYNCING ENGINE...";
+    loadMoreBtn.innerText = "RE-SYNCING...";
     loadLogs().finally(() => {
       loadMoreBtn.innerText = "FORCE RE-SYNC ENGINE";
     });

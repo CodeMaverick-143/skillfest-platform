@@ -1,6 +1,6 @@
 "use client";
 
-import { Github, Trophy, Calendar, Users, Code2, Star } from "lucide-react";
+import { Github, Trophy, Calendar, Users, Code2, Star, Instagram, Linkedin, Mail } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
@@ -128,22 +128,24 @@ export default function EventClosedPage() {
 
           <motion.div
             variants={fadeUp}
-            className="flex flex-col sm:flex-row gap-4 w-full justify-center font-mono"
+            className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full max-w-2xl justify-center font-mono"
           >
-            <Link
-              href="/leaderboard"
-              className="px-8 py-3.5 bg-[#1A1A1A] text-white font-bold text-[13px] rounded hover:bg-[#333] transition-colors flex items-center justify-center gap-2 shadow-lg shadow-black/10"
-            >
-              <Trophy className="w-4 h-4" /> View Leaderboard
-            </Link>
-            <a
-              href="https://github.com/nst-sdc"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-3.5 bg-transparent border border-[#D6D0C4] text-[#1A1A1A] font-bold text-[13px] rounded hover:bg-[#F5F2EA] transition-colors flex items-center justify-center gap-2"
-            >
-              <Github className="w-4 h-4" /> NST-SDC on GitHub
-            </a>
+            {[
+              { label: "LinkedIn", icon: Linkedin, href: "https://www.linkedin.com/company/nst-sdc", color: "hover:text-[#0077B5]" },
+              { label: "Instagram", icon: Instagram, href: "https://www.instagram.com/devclub.nst", color: "hover:text-[#E4405F]" },
+              { label: "GitHub", icon: Github, href: "https://github.com/nst-sdc", color: "hover:text-[#1A1A1A]" },
+              { label: "Email", icon: Mail, href: "mailto:support@nstsdc.org", color: "hover:text-[#1A1A1A]" }
+            ].map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                target={link.href.startsWith("http") ? "_blank" : undefined}
+                rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                className={`px-4 py-3.5 bg-white border border-[#D6D0C4] text-[#8C867E] font-bold text-[11px] rounded transition-all flex items-center justify-center gap-2 hover:bg-[#F5F2EA] hover:border-[#8C867E] ${link.color}`}
+              >
+                <link.icon className="w-3.5 h-3.5" /> {link.label}
+              </a>
+            ))}
           </motion.div>
         </motion.div>
       </section>

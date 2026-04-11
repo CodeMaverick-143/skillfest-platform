@@ -195,7 +195,8 @@ func (s *Server) setupRouter() {
 			admin.GET("/applications", s.listApplications)
 			admin.POST("/applications/:id/status", s.updateApplicationStatus)
 			admin.GET("/prs/merged", s.loggingMiddleware(), s.listMergedPRs)
-			admin.GET("/logs", s.loggingMiddleware(), s.getAdminLogs)
+			admin.GET("/logs", s.loggingMiddleware(), s.getAdminAuditLogs)
+			admin.GET("/sync-logs", s.loggingMiddleware(), s.getAdminSyncLogs)
 			admin.GET("/leaderboard-settings", s.loggingMiddleware(), s.handleLeaderboardSettings)
 			admin.POST("/leaderboard-settings", s.loggingMiddleware(), s.handleLeaderboardSettings)
 
@@ -514,6 +515,7 @@ func (s *Server) updateUserRank(c *gin.Context) {
 
 	if req.Points != nil {
 		user.Points = *req.Points
+		user.LastScoreUpdatedAt = time.Now()
 	}
 	if err := s.userRepo.Update(c.Request.Context(), user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
@@ -585,12 +587,25 @@ func (s *Server) getUserProfile(c *gin.Context) {
 		return
 	}
 
-	filteredPRs, err := s.prRepo.GetFilteredByUser(c.Request.Context(), user.ID)
-	if err != nil {
-		filteredPRs = []model.PullRequest{}
+	// RBAC: Only admin or the owner can see the detailed contribution history
+	canSeeDetails := false
+	requesterVal, exists := c.Get("user")
+	if exists {
+		requester := requesterVal.(*model.User)
+		if requester.IsAdmin || requester.ID == user.ID {
+			canSeeDetails = true
+		}
 	}
 
-	// Calculate rank (simulated for now, or fetch from leaderboard)
+	filteredPRs := []model.PullRequest{}
+	if canSeeDetails {
+		filteredPRs, err = s.prRepo.GetFilteredByUser(c.Request.Context(), user.ID)
+		if err != nil {
+			filteredPRs = []model.PullRequest{}
+		}
+	}
+
+	// Calculate rank
 	users, _ := s.userRepo.GetLeaderboard(c.Request.Context(), 1000)
 	rank := 0
 	for i, u := range users {
@@ -604,6 +619,7 @@ func (s *Server) getUserProfile(c *gin.Context) {
 		"user":          user,
 		"pull_requests": filteredPRs,
 		"rank":          rank,
+		"can_see_details": canSeeDetails,
 	})
 }
 
@@ -896,23 +912,40 @@ func (s *Server) googleCallback(c *gin.Context) {
 func (s *Server) loggingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userVal, exists := c.Get("user")
-		userID := "anonymous"
-		if exists {
-			user := userVal.(*model.User)
-			userID = user.ID.String()
-		}
 
-		// Log the action asynchronously
-		if s.loggingService != nil {
-			go s.loggingService.LogAction(context.Background(), service.AdminLog{
-				UserID:   userID,
-				Action:   fmt.Sprintf("%s %s", c.Request.Method, c.Request.URL.Path),
-				Metadata: map[string]string{"ip": c.ClientIP()},
-			})
+		// Log the action asynchronously as an audit log for admin operations
+		if s.loggingService != nil && exists {
+			user := userVal.(*model.User)
+			if user.IsAdmin {
+				go s.loggingService.LogAuditAction(context.Background(), &model.AuditLog{
+					AdminID:   user.ID,
+					Action:    fmt.Sprintf("%s %s", c.Request.Method, c.Request.URL.Path),
+					CreatedAt: time.Now(),
+					Reason:    fmt.Sprintf("API Request from %s", c.ClientIP()),
+				})
+			}
 		}
 
 		c.Next()
 	}
+}
+
+func (s *Server) getAdminAuditLogs(c *gin.Context) {
+	logs, err := s.loggingService.GetAuditLogs(c.Request.Context(), 100, 0)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch audit logs"})
+		return
+	}
+	c.JSON(http.StatusOK, logs)
+}
+
+func (s *Server) getAdminSyncLogs(c *gin.Context) {
+	logs, err := s.loggingService.GetSyncLogs(c.Request.Context(), 100, 0)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch sync logs"})
+		return
+	}
+	c.JSON(http.StatusOK, logs)
 }
 
 func (s *Server) adminMiddleware() gin.HandlerFunc {

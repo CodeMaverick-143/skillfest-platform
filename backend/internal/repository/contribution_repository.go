@@ -13,5 +13,6 @@ type ContributionRepository interface {
 	ListByUser(ctx context.Context, userID uuid.UUID) ([]model.Contribution, error)
 	ListByRepo(ctx context.Context, repoID uuid.UUID) ([]model.Contribution, error)
 	GetUserAnalytics(ctx context.Context, userID uuid.UUID, since, until time.Time) ([]model.Contribution, error)
+	GetFilteredByUser(ctx context.Context, userID uuid.UUID) ([]model.Contribution, error)
 	GetLeaderboard(ctx context.Context, since, until time.Time) ([]model.LeaderboardEntry, error)
 }

@@ -38,6 +38,8 @@ func main() {
 			&model.EvaluationRubric{},
 			&model.ProjectEvaluation{},
 			&model.EventConfig{},
+			&model.AuditLog{},
+			&model.SyncLog{},
 		); err != nil {
 			log.Fatalf("Failed to migrate database: %v", err)
 		}
@@ -64,6 +66,8 @@ func main() {
 	repoRepo := postgres.NewPostgresRepoRepository(pool)
 	contributionRepo := postgres.NewPostgresContributionRepository(pool)
 	evaluationRepo := postgres.NewPostgresEvaluationRepository(pool)
+	auditRepo := postgres.NewPostgresAuditLogRepository(pool)
+	syncLogRepo := postgres.NewPostgresSyncLogRepository(pool)
 
 	// 3. Initialize Services
 	ghToken := os.Getenv("GITHUB_SYSTEM_TOKEN")
@@ -77,14 +81,14 @@ func main() {
 	} else {
 		log.Println("Redis connected and caching enabled")
 	}
-	logger, _ := service.NewMongoLoggingService(cfg.MongoDBURI)
+	logger := service.NewPostgresLoggingService(auditRepo, syncLogRepo)
 
-	pointsService := service.NewPointsService(userRepo, prRepo, repoRepo)
+	pointsService := service.NewPointsService(userRepo, prRepo, repoRepo, contributionRepo)
 	adminService := service.NewAdminService(fresherRepo, userRepo, prRepo, contributionRepo, repoRepo)
 	analyticsService := service.NewAnalyticsService(contributionRepo, cache)
 
 	// 4. Start Background Worker
-	syncWorker := service.NewSyncWorker(userRepo, ghService, contributionRepo, repoRepo, pointsService)
+	syncWorker := service.NewSyncWorker(userRepo, ghService, contributionRepo, repoRepo, prRepo, pointsService, logger, pool)
 	go syncWorker.Start(ctx, 30*time.Minute)
 
 	// 5. Setup Server — pass pool so event handlers can access EventConfig

@@ -16,8 +16,8 @@ function useCountdown(targetStr: string | null) {
     if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
     const s = Math.floor(diff / 1000);
     return {
-      days:    Math.floor(s / 86400),
-      hours:   Math.floor((s % 86400) / 3600),
+      days: Math.floor(s / 86400),
+      hours: Math.floor((s % 86400) / 3600),
       minutes: Math.floor((s % 3600) / 60),
       seconds: s % 60,
     };
@@ -47,7 +47,7 @@ export function Navbar() {
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll, { passive: true });
-    
+
     // Fetch event status for the banner
     fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080"}/api/event/status`)
       .then(r => r.json())
@@ -65,7 +65,6 @@ export function Navbar() {
   const countdown = useCountdown(eventStatus?.phase === "active" ? eventStatus.end_date : eventStatus?.start_date || null);
 
   const links = [
-    { name: "Rules", href: "/rules", icon: ScrollText },
     { name: "Projects", href: "/projects", icon: Layers },
     { name: "Dashboard", href: "/dashboard", icon: Code },
     { name: "Leaderboard", href: "/leaderboard", icon: BarChart3 },
@@ -81,7 +80,7 @@ export function Navbar() {
         {/* ─── Announcement Banner ─── */}
         <AnimatePresence>
           {eventStatus && (
-            <motion.div 
+            <motion.div
               initial={{ y: -40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               className="bg-[#1A1A1A] text-white py-1.5 px-6 pointer-events-auto border-b border-white/10"
@@ -89,11 +88,11 @@ export function Navbar() {
               <div className="max-w-7xl mx-auto flex items-center justify-center gap-3 font-mono text-[9px] md:text-[10px] font-bold tracking-widest uppercase">
                 <span className={`inline-block w-1.5 h-1.5 rounded-full ${eventStatus.phase === "active" ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
                 <span>
-                  {eventStatus.phase === "active" 
+                  {eventStatus.phase === "active"
                     ? `Live: ${eventStatus.event_title} — Ends in ${countdown.days}d ${countdown.hours}h ${countdown.minutes}m`
                     : eventStatus.phase === "coming_soon"
-                    ? `Launching: ${eventStatus.event_title} — Starts in ${countdown.days}d ${countdown.hours}h`
-                    : `${eventStatus.event_title} has concluded`}
+                      ? `Launching: ${eventStatus.event_title} — Starts in ${countdown.days}d ${countdown.hours}h`
+                      : `${eventStatus.event_title} has concluded`}
                 </span>
                 <span className={`inline-block w-1.5 h-1.5 rounded-full ${eventStatus.phase === "active" ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
               </div>
@@ -102,21 +101,21 @@ export function Navbar() {
         </AnimatePresence>
 
         {/* ─── Main Navbar ─── */}
-        <nav 
+        <nav
           className={`w-full transition-all duration-500 pointer-events-auto
-          ${scrolled 
-            ? "py-3 bg-[#1A1A1A]/90 backdrop-blur-xl border-b border-white/10 shadow-lg" 
-            : "py-5 bg-transparent"}`}
+          ${scrolled
+              ? "py-3 bg-[#1A1A1A]/90 backdrop-blur-xl border-b border-white/10 shadow-lg"
+              : "py-5 bg-transparent"}`}
         >
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex items-center justify-between">
-              
+
               {/* Logo */}
               <div className="flex items-center justify-start flex-1">
                 <Link href="/" className={`flex items-center gap-2.5 group shrink-0 transition-opacity duration-300 ${mobileOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} onClick={closeMobile}>
                   <img src="/favicon.ico" alt="SkillFest" className="w-5 h-5 object-contain transition-transform group-hover:scale-110" />
-                  <motion.span 
-                    animate={{ 
+                  <motion.span
+                    animate={{
                       color: scrolled ? "#FFFFFF" : "#71717a",
                       scale: scrolled ? 0.95 : 1,
                       y: scrolled ? 0 : -1
@@ -125,7 +124,7 @@ export function Navbar() {
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     className="font-display font-black text-sm tracking-tight uppercase leading-none cursor-default"
                   >
-                    SKILLFEST<motion.span 
+                    SKILLFEST<motion.span
                       animate={{ color: scrolled ? "#34d399" : "#059669" }}
                     >
                       .
@@ -137,14 +136,13 @@ export function Navbar() {
               {/* Desktop Menu */}
               <div className="hidden md:flex items-center justify-center gap-8">
                 {links.map((l) => (
-                  <Link 
-                    key={l.name} 
-                    href={l.href} 
-                    className={`text-[11px] font-bold tracking-widest uppercase transition-all transform hover:-translate-y-0.5 ${
-                      scrolled 
-                        ? 'text-white/70 hover:text-white' 
+                  <Link
+                    key={l.name}
+                    href={l.href}
+                    className={`text-[11px] font-bold tracking-widest uppercase transition-all transform hover:-translate-y-0.5 ${scrolled
+                        ? 'text-white/70 hover:text-white'
                         : 'text-[#8C867E] hover:text-[#1A1A1A]'
-                    }`}
+                      }`}
                   >
                     {l.name}
                   </Link>
@@ -170,8 +168,8 @@ export function Navbar() {
                     </div>
                   </div>
                 ) : (
-                  <Link 
-                    href={getApiUrl("/api/auth/github")} 
+                  <Link
+                    href={getApiUrl("/api/auth/github")}
                     className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-[#1A1A1A] dark:bg-white text-white dark:text-[#1A1A1A] font-bold text-[10px] tracking-widest uppercase hover:opacity-90 transition-all rounded-full shadow-lg shadow-black/5"
                   >
                     <Github className="w-3.5 h-3.5" /> Sign In
@@ -190,17 +188,17 @@ export function Navbar() {
       <AnimatePresence>
         {mobileOpen && (
           <>
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }} 
-              className="fixed inset-0 z-[45] bg-[#FDFBF7]/80 dark:bg-black/80 backdrop-blur-md md:hidden" 
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[45] bg-[#FDFBF7]/80 dark:bg-black/80 backdrop-blur-md md:hidden"
               onClick={closeMobile}
             />
-            <motion.div 
-              initial={{ x: "100%" }} 
-              animate={{ x: 0 }} 
-              exit={{ x: "100%" }} 
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="fixed right-0 top-0 bottom-0 w-[80%] max-w-[320px] z-[46] bg-white dark:bg-[#111] border-l border-[#EBE6DF] dark:border-white/5 p-8 pt-24 flex flex-col md:hidden"
             >
@@ -214,9 +212,9 @@ export function Navbar() {
               </div>
 
               {!user && (
-                <Link 
-                  href={getApiUrl("/api/auth/github")} 
-                  onClick={closeMobile} 
+                <Link
+                  href={getApiUrl("/api/auth/github")}
+                  onClick={closeMobile}
                   className="flex items-center justify-center gap-2.5 px-6 py-5 bg-[#1A1A1A] dark:bg-white text-white dark:text-[#1A1A1A] font-bold text-[11px] tracking-widest uppercase mt-8 rounded-2xl shadow-xl shadow-black/10"
                 >
                   <Github className="w-5 h-5" /> Sign In via GitHub

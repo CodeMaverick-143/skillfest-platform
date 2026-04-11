@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"fmt"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -47,6 +48,17 @@ func (s *Server) updateUserPoints(c *gin.Context) {
 		return
 	}
 
+	// Audit Log
+	userVal, _ := c.Get("user")
+	admin := userVal.(*model.User)
+	s.loggingService.LogAuditAction(c.Request.Context(), &model.AuditLog{
+		AdminID:  admin.ID,
+		Action:   "UPDATE_USER_POINTS",
+		TargetID: userID.String(),
+		NewValue: fmt.Sprintf("%d", input.Points),
+		Reason:   c.Query("reason"),
+	})
+
 	c.JSON(http.StatusOK, gin.H{"message": "Points updated successfully"})
 }
 
@@ -59,18 +71,31 @@ func (s *Server) updateUserStatus(c *gin.Context) {
 	}
 
 	var input struct {
-		IsHidden bool `json:"is_hidden"`
-		IsBanned bool `json:"is_banned"`
+		IsHidden   bool `json:"is_hidden"`
+		IsBanned   bool `json:"is_banned"`
+		IsAdmin    bool `json:"is_admin"`
+		IsReviewer bool `json:"is_reviewer"`
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	if err := s.adminService.UpdateUserStatus(c.Request.Context(), userID, input.IsHidden, input.IsBanned); err != nil {
+	if err := s.adminService.UpdateUserStatus(c.Request.Context(), userID, input.IsHidden, input.IsBanned, input.IsAdmin, input.IsReviewer); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user status"})
 		return
 	}
+
+	// Audit Log
+	userVal, _ := c.Get("user")
+	admin := userVal.(*model.User)
+	s.loggingService.LogAuditAction(c.Request.Context(), &model.AuditLog{
+		AdminID:  admin.ID,
+		Action:   "UPDATE_USER_STATUS",
+		TargetID: userID.String(),
+		NewValue: fmt.Sprintf("hidden:%v, banned:%v, admin:%v, reviewer:%v", input.IsHidden, input.IsBanned, input.IsAdmin, input.IsReviewer),
+		Reason:   c.Query("reason"),
+	})
 
 	c.JSON(http.StatusOK, gin.H{"message": "User status updated successfully"})
 }
@@ -82,15 +107,6 @@ func (s *Server) listMergedPRs(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, prs)
-}
-
-func (s *Server) getAdminLogs(c *gin.Context) {
-	logs, err := s.loggingService.GetLogs(c.Request.Context(), 50)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch logs"})
-		return
-	}
-	c.JSON(http.StatusOK, logs)
 }
 
 func (s *Server) listRepositories(c *gin.Context) {
@@ -112,6 +128,17 @@ func (s *Server) addRepository(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Audit Log
+	userVal, _ := c.Get("user")
+	admin := userVal.(*model.User)
+	s.loggingService.LogAuditAction(c.Request.Context(), &model.AuditLog{
+		AdminID:  admin.ID,
+		Action:   "ADD_REPOSITORY",
+		TargetID: repo.ID.String(),
+		NewValue: fmt.Sprintf("%s/%s", repo.Owner, repo.Name),
+	})
+
 	// Invalidate cache
 	if s.cacheService != nil {
 		s.cacheService.Delete(c.Request.Context(), "active_repos")
@@ -130,6 +157,16 @@ func (s *Server) deleteRepository(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Audit Log
+	userVal, _ := c.Get("user")
+	admin := userVal.(*model.User)
+	s.loggingService.LogAuditAction(c.Request.Context(), &model.AuditLog{
+		AdminID:  admin.ID,
+		Action:   "DELETE_REPOSITORY",
+		TargetID: id.String(),
+	})
+
 	// Invalidate cache
 	if s.cacheService != nil {
 		s.cacheService.Delete(c.Request.Context(), "active_repos")

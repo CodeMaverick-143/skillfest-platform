@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 	"github.com/google/uuid"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
 )
@@ -12,7 +13,7 @@ type UserRepository interface {
 	GetByGitHubID(ctx context.Context, githubID string) (*model.User, error)
 	GetByUsername(ctx context.Context, username string) (*model.User, error)
 	Update(ctx context.Context, user *model.User) error
-	UpdatePoints(ctx context.Context, userID uuid.UUID, points int, level string) error
+	UpdatePoints(ctx context.Context, userID uuid.UUID, points int, level string, lastScoreUpdatedAt time.Time) error
 	GetLeaderboard(ctx context.Context, limit int) ([]model.User, error)
 	List(ctx context.Context) ([]model.User, error)
 	GetByEmail(ctx context.Context, email string) (*model.User, error)

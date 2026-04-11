@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # Database
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-skillfest}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - skillfest-net
+
+  # Cache
+  redis:
+    image: redis:7-alpine
+    restart: always
+    networks:
+      - skillfest-net
+
+  # Backend API
+  backend:
+    build: ./backend
+    restart: always
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres_password}@db:5432/${DB_NAME:-skillfest}?sslmode=disable
+      REDIS_URL: redis:6379
+      PORT: 8080
+      FRONTEND_URL: https://skillfest.nstsdc.org
+      ADMIN_FRONTEND_URL: https://admin-skillfest.nstsdc.org
+      BACKEND_URL: https://backend-skillfest.nstsdc.org
+      JWT_SECRET: ${JWT_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      ADMIN_GITHUB_CLIENT_ID: ${ADMIN_GITHUB_CLIENT_ID}
+      ADMIN_GITHUB_CLIENT_SECRET: ${ADMIN_GITHUB_CLIENT_SECRET}
+      GITHUB_SYSTEM_TOKEN: ${GITHUB_SYSTEM_TOKEN}
+      CLOSE_EVENT_PASSWORD: ${CLOSE_EVENT_PASSWORD}
+    ports:
+      - "5000:8080"
+    depends_on:
+      - db
+      - redis
+    networks:
+      - skillfest-net
+
+  # Frontend App
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_BACKEND_URL: https://backend-skillfest.nstsdc.org
+    restart: always
+    ports:
+      - "3000:3000"
+    networks:
+      - skillfest-net
+
+  # Admin Portal
+  admin:
+    build:
+      context: ./admin-portal
+      args:
+        PUBLIC_BACKEND_URL: https://backend-skillfest.nstsdc.org
+    restart: always
+    ports:
+      - "4321:80"
+    networks:
+      - skillfest-net
+
+networks:
+  skillfest-net:
+    driver: bridge
+
+volumes:
+  postgres_data:

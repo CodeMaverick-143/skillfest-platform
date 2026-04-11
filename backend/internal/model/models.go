@@ -32,8 +32,29 @@ type User struct {
 	IsAdmin     bool      `gorm:"default:false" json:"is_admin"`
 	IsBanned    bool      `gorm:"default:false;index:idx_user_status_points" json:"is_banned"`
 	Attempts    []IssueAttempt `gorm:"foreignKey:UserID" json:"attempts,omitempty"`
+	LastScoreUpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"last_score_updated_at"`
+	IsReviewer  bool      `gorm:"default:false" json:"is_reviewer"` // For RBAC
 	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
+}
+func (u *User) CalculateLevel() string {
+	points := u.Points
+	switch {
+	case points >= 100000:
+		return "Elite"
+	case points >= 50000:
+		return "Lead"
+	case points >= 25000:
+		return "Core"
+	case points >= 10000:
+		return "Maintainer"
+	case points >= 2500:
+		return "Builder"
+	case points >= 1000:
+		return "Contributor"
+	default:
+		return "Explorer"
+	}
 }
 
 type PullRequest struct {
@@ -81,8 +102,9 @@ type Contribution struct {
 	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	UserID      uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
 	RepoID      uuid.UUID `gorm:"type:uuid;not null;index" json:"repo_id"`
-	Type        string    `json:"type"` // PR, Commit, Issue, Merge
-	ExternalID  string    `gorm:"uniqueIndex" json:"external_id"` // PR number, commit SHA, etc.
+	EventID     uint      `gorm:"index;not null;default:1" json:"event_id"` // Tied to EventConfig ID
+	Type        string    `json:"type"` // PR, Commit, Issue, Merge, Reversal
+	ExternalID  string    `gorm:"uniqueIndex:idx_cont_ext;not null" json:"external_id"` // PR number, commit SHA, etc.
 	Points      int       `json:"points"`
 	OccurredAt  time.Time `gorm:"index" json:"occurred_at"`
 	Metadata    string    `gorm:"type:text" json:"metadata"` // JSON string
@@ -129,6 +151,28 @@ type ProjectEvaluation struct {
 	SubmittedAt *time.Time `json:"submitted_at,omitempty"`
 	CreatedAt   time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt   time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
+}
+
+// AuditLog tracks administrative actions.
+type AuditLog struct {
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	AdminID   uuid.UUID `gorm:"type:uuid;not null;index" json:"admin_id"`
+	Action    string    `gorm:"not null;index" json:"action"`
+	TargetID  string    `gorm:"index" json:"target_id"` // User ID, Repo ID, etc.
+	OldValue  string    `gorm:"type:text" json:"old_value"`
+	NewValue  string    `gorm:"type:text" json:"new_value"`
+	Reason    string    `gorm:"type:text" json:"reason"`
+	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP;index" json:"created_at"`
+}
+
+// SyncLog tracks repository synchronization operations.
+type SyncLog struct {
+	ID             uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	Status         string    `json:"status"` // success, error, partially_completed
+	ProcessedCount int       `json:"processed_count"`
+	ErrorMsg       string    `gorm:"type:text" json:"error_msg"`
+	StartedAt      time.Time `json:"started_at"`
+	EndedAt        time.Time `json:"ended_at"`
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
@@ -183,6 +227,20 @@ func (er *EvaluationRubric) BeforeCreate(tx *gorm.DB) (err error) {
 func (pe *ProjectEvaluation) BeforeCreate(tx *gorm.DB) (err error) {
 	if pe.ID == uuid.Nil {
 		pe.ID = uuid.New()
+	}
+	return
+}
+
+func (al *AuditLog) BeforeCreate(tx *gorm.DB) (err error) {
+	if al.ID == uuid.Nil {
+		al.ID = uuid.New()
+	}
+	return
+}
+
+func (sl *SyncLog) BeforeCreate(tx *gorm.DB) (err error) {
+	if sl.ID == uuid.Nil {
+		sl.ID = uuid.New()
 	}
 	return
 }

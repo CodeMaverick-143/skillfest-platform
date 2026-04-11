@@ -1,37 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  /* ─── Core Palette (Deep Indigo & Pure Ivory) ─── */
-  --background: #FCFAF6; /* Refined Alabaster */
-  --foreground: #020617; /* Deep Slate/Navy */
+  /* ─── Core Palette (Premium Zinc & Electric Indigo) ─── */
+  --background: #FFFFFF; 
+  --foreground: #09090B; /* Deep Zinc Black */
 
   /* Neutral Stack (Sophisticated layering) */
   --surface-0: #FFFFFF;
-  --surface-1: #F8FAFC;
-  --surface-2: #F1F5F9;
-  --surface-3: #E2E8F0;
+  --surface-1: #FAFAFA;
+  --surface-2: #F4F4F5;
+  --surface-3: #E4E4E7;
   
-  /* Accents (Professional Electric Indigo) */
-  --accent: #4F46E5;     
-  --accent-hover: #4338CA;
+  /* Accents (Electric Indigo) */
+  --accent: #6366F1;     
+  --accent-hover: #4F46E5;
   --accent-light: #EEF2FF;
-  --accent-muted: #64748B;
+  --accent-muted: #71717A;
 
   /* Borders & Dividers */
-  --border: #E2E8F0;
-  --border-light: #F1F5F9;
-  --border-strong: #CBD5E1;
+  --border: #E4E4E7;
+  --border-light: #F4F4F5;
+  --border-strong: #A1A1AA;
 
   /* Effects */
-  --radius-sm: 0.75rem;
-  --radius-md: 1rem;
-  --radius-lg: 1.5rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
   --radius-full: 9999px;
 
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 6px -1px rgb(0 0 0 / 0.04);
-  --shadow-lg: 0 12px 24px -6px rgb(0 0 0 / 0.12), 0 8px 12px -4px rgb(0 0 0 / 0.06);
-  --shadow-premium: 0 20px 50px -12px rgba(79, 70, 229, 0.15);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-premium: 0 25px 50px -12px rgba(99, 102, 241, 0.12);
 }
 
 body {
@@ -40,7 +40,7 @@ body {
   font-family: 'Space Grotesk', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 /* ─── Modern Component primitives ─── */
@@ -50,55 +50,60 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card:hover {
   border-color: var(--accent);
   box-shadow: var(--shadow-premium);
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
 
 .btn-primary {
-  @apply bg-indigo-600 text-white font-black uppercase italic tracking-tighter px-8 py-4 rounded-2xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all;
+  @apply bg-zinc-900 text-white font-bold tracking-tight px-8 py-4 rounded-xl shadow-lg hover:bg-zinc-800 hover:scale-[1.02] active:scale-95 transition-all;
 }
 
 .btn-secondary {
-  @apply bg-slate-50 text-slate-900 font-bold uppercase italic tracking-tighter px-6 py-3 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-all;
+  @apply bg-white text-zinc-900 font-bold tracking-tight px-6 py-3 rounded-xl border border-zinc-200 hover:bg-zinc-50 transition-all;
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 /* ─── Typography & Utilities ─── */
 
 .title-primary {
-  @apply text-5xl font-black tracking-tighter uppercase italic leading-none;
+  @apply text-5xl font-black tracking-tight leading-[1.1] text-zinc-950;
 }
 
 .title-secondary {
-  @apply text-3xl font-black tracking-tight uppercase italic;
+  @apply text-2xl font-bold tracking-tight text-zinc-900;
 }
 
 .sub-header {
-  @apply text-slate-400 font-medium tracking-tight text-lg mt-3;
+  @apply text-zinc-500 font-medium text-lg leading-relaxed mt-2;
 }
 
 .label-caps {
-  @apply text-[10px] font-black uppercase tracking-[0.3em] text-slate-500;
+  @apply text-[11px] font-bold uppercase tracking-[0.15em] text-zinc-500;
 }
 
 .badge-status {
-  @apply text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border shadow-sm;
+  @apply text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border shadow-sm;
 }
 
-/* ──── Scrollbar ──── */
+/* ──── Selection & Scrollbar ──── */
+::selection {
+  background: #EEF2FF;
+  color: #4F46E5;
+}
+
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
