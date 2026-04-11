@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -319,12 +320,8 @@ func (s *Server) adminGithubCallback(c *gin.Context) {
 		}
 		
 		// Check for bootstrap admin list
-		adminList := strings.Split(s.cfg.AdminUsernames, ",")
-		for _, name := range adminList {
-			if strings.TrimSpace(name) == *ghUser.Login {
-				user.IsAdmin = true
-				break
-			}
+		if s.verifyAdminStatus(*ghUser.Login) {
+			user.IsAdmin = true
 		}
 
 		if err := s.userRepo.Create(c.Request.Context(), user); err != nil {
@@ -1026,4 +1023,25 @@ func (s *Server) getLimiter(ip string) *rate.Limiter {
 	}
 
 	return limiter
+}
+
+func (s *Server) verifyAdminStatus(username string) bool {
+	// 1. Check Environment Variable (Allowlist / Bootstrap)
+	adminUsernames := os.Getenv("ADMIN_GITHUB_USERNAMES")
+	if adminUsernames != "" {
+		admins := strings.Split(adminUsernames, ",")
+		for _, admin := range admins {
+			if strings.TrimSpace(admin) == username {
+				return true
+			}
+		}
+	}
+
+	// 2. Check Database (Manually Promoted Users)
+	user, err := s.userRepo.GetByUsername(context.Background(), username)
+	if err == nil && user != nil && user.IsAdmin {
+		return true
+	}
+
+	return false
 }
