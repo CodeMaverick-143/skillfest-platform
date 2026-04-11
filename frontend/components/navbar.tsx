@@ -169,7 +169,7 @@ export function Navbar() {
                   </div>
                 ) : (
                   <Link
-                    href={getApiUrl("/api/auth/github")}
+                    href={getApiUrl("/api/auth/github/login")}
                     className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-[#1A1A1A] dark:bg-white text-white dark:text-[#1A1A1A] font-bold text-[10px] tracking-widest uppercase hover:opacity-90 transition-all rounded-full shadow-lg shadow-black/5"
                   >
                     <Github className="w-3.5 h-3.5" /> Sign In

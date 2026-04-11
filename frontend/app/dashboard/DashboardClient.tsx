@@ -48,7 +48,7 @@ export default function DashboardClient() {
         <h2 className="text-[24px] font-bold text-[#1A1A1A] mb-4 font-mono tracking-widest uppercase">Access Denied</h2>
         <p className="text-[#6B6661] text-sm mb-8 font-medium max-w-sm">Connect your GitHub to sync your open-source telemetrics.</p>
         <Link 
-          href={getApiUrl("/api/auth/github")}
+          href={getApiUrl("/api/auth/github/login")}
           className="px-8 py-3 bg-[#1A1A1A] text-white font-bold rounded text-[13px] tracking-widest uppercase font-mono hover:bg-[#333] transition-all shadow-md"
         >
           Authenticate

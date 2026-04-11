@@ -145,7 +145,7 @@ function ComingSoonView({ config }: { config: EventStatus }) {
           </motion.div>
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 w-full justify-center">
-            <Link href={getApiUrl("/api/auth/github")} className="px-8 py-3.5 bg-[#1A1A1A] text-white font-bold text-[13px] rounded hover:bg-[#333] transition-colors flex items-center justify-center gap-2 shadow-lg shadow-black/10 font-mono">
+            <Link href={getApiUrl("/api/auth/github/login")} className="px-8 py-3.5 bg-[#1A1A1A] text-white font-bold text-[13px] rounded hover:bg-[#333] transition-colors flex items-center justify-center gap-2 shadow-lg shadow-black/10 font-mono">
               <span className="opacity-50">&gt;_</span> Register Early
             </Link>
             <Link href="/docs" className="px-8 py-3.5 bg-transparent border border-[#D6D0C4] text-[#1A1A1A] font-bold text-[13px] rounded hover:bg-[#F5F2EA] transition-colors flex items-center justify-center gap-2 font-mono">
@@ -238,7 +238,7 @@ function ActiveEventView({ config }: { config: EventStatus }) {
                 <span className="opacity-50">&gt;_</span> Go to Dashboard
               </Link>
             ) : (
-              <Link href={getApiUrl("/api/auth/github")} className="w-full sm:w-auto px-8 py-3.5 bg-[#1A1A1A] text-white font-bold text-[13px] rounded hover:bg-[#333] transition-colors flex items-center justify-center gap-2 shadow-lg shadow-black/10">
+              <Link href={getApiUrl("/api/auth/github/login")} className="w-full sm:w-auto px-8 py-3.5 bg-[#1A1A1A] text-white font-bold text-[13px] rounded hover:bg-[#333] transition-colors flex items-center justify-center gap-2 shadow-lg shadow-black/10">
                 <span className="opacity-50">&gt;_</span> Get Started
               </Link>
             )}
