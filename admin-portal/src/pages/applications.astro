@@ -127,6 +127,13 @@ import { Search, X, ExternalLink, CheckCircle, XCircle } from 'lucide-react';
             <td class="px-8 py-6 text-right" onclick="event.stopPropagation()">
               <div class="flex items-center justify-end gap-2">
                 <button 
+                  onclick="showDetails('${app.id}')"
+                  class="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm group/btn"
+                >
+                   <span class="text-[9px] font-black uppercase tracking-widest">Review Submission</span>
+                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+                <button 
                   onclick="updateStatus('${app.id}', 'Approved')"
                   class="p-2 rounded-lg bg-zinc-50 border border-zinc-200 text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all"
                   title="Approve"
@@ -151,6 +158,16 @@ import { Search, X, ExternalLink, CheckCircle, XCircle } from 'lucide-react';
     const app = allApplications.find(a => a.id === id);
     if (!app) return;
 
+    const getSafeHost = (url) => {
+      try {
+        if (!url) return '';
+        const cleanUrl = url.includes('://') ? url : `https://${url}`;
+        return new URL(cleanUrl).hostname;
+      } catch (e) {
+        return url; // Fallback to raw string
+      }
+    };
+
     detailContent.innerHTML = `
       <div class="space-y-8">
         <div class="flex items-center gap-6 pb-8 border-b border-zinc-100">
@@ -171,8 +188,8 @@ import { Search, X, ExternalLink, CheckCircle, XCircle } from 'lucide-react';
           <div class="space-y-2">
             <p class="label-caps !text-zinc-400">Portfolio</p>
             ${app.portfolio_url ? `
-              <a href="${app.portfolio_url}" target="_blank" class="text-indigo-600 font-bold hover:underline flex items-center gap-2">
-                ${new URL(app.portfolio_url).hostname}
+              <a href="${app.portfolio_url.includes('://') ? app.portfolio_url : 'https://' + app.portfolio_url}" target="_blank" class="text-indigo-600 font-bold hover:underline flex items-center gap-2">
+                ${getSafeHost(app.portfolio_url)}
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 22 3 22 10"/><line x1="10" y1="14" x2="22" y2="2"/></svg>
               </a>
             ` : '<p class="text-zinc-400 italic">No URL provided</p>'}
@@ -191,9 +208,9 @@ import { Search, X, ExternalLink, CheckCircle, XCircle } from 'lucide-react';
         </div>
 
         <div class="space-y-4">
-          <p class="label-caps !text-zinc-400">Statement of Purpose</p>
-          <div class="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 text-zinc-700 leading-relaxed font-medium">
-            ${app.statement || 'No statement provided.'}
+          <p class="label-caps !text-zinc-600 tracking-[0.2em] mb-4">Motivation (Why SkillFest?)</p>
+          <div class="p-8 bg-indigo-50/30 rounded-[28px] border border-indigo-100/50 text-indigo-950 leading-relaxed font-semibold text-lg shadow-sm">
+            ${app.statement || 'No motivation statement provided.'}
           </div>
         </div>
 

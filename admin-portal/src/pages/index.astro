@@ -51,6 +51,28 @@ import { Users, GitPullRequest, CheckCircle, Activity, Trophy, Calendar, Setting
             <div class="animate-pulse h-20 bg-zinc-50 rounded-xl"></div>
           ))}
         </div>
+
+        <!-- Recent Applications -->
+        <div class="mt-12 pt-12 border-t border-zinc-100">
+          <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center border border-amber-100">
+                <ClipboardList size={22} />
+              </div>
+              <div>
+                <h3 class="title-secondary !text-xl text-zinc-900">Recent Applications</h3>
+                <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Pending registration queue</p>
+              </div>
+            </div>
+            <a href="/applications" class="label-caps !text-indigo-600 hover:text-indigo-700 transition-colors">Manage All</a>
+          </div>
+          
+          <div class="space-y-3" id="recentApplications">
+            {[1, 2].map(() => (
+              <div class="animate-pulse h-20 bg-zinc-50 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <!-- Control Panel -->
@@ -130,6 +152,7 @@ import { Users, GitPullRequest, CheckCircle, Activity, Trophy, Calendar, Setting
   const statsGrid = document.getElementById('statsGrid');
   const recentActivity = document.getElementById('recentActivity');
   const syncBtn = document.getElementById('syncBtn');
+  const recentApplications = document.getElementById('recentApplications');
 
   async function loadDashboard() {
     try {
@@ -163,9 +186,22 @@ import { Users, GitPullRequest, CheckCircle, Activity, Trophy, Calendar, Setting
         </div>
       `).join('');
 
-      const prsRes = await fetch('/api/admin/prs/merged');
+      const [prsRes, appsResFull] = await Promise.all([
+        fetch('/api/admin/prs/merged'),
+        fetch('/api/admin/applications')
+      ]);
       const prsData = await prsRes.json();
-      const recentPRs = Array.isArray(prsData) ? prsData.slice(0, 5) : [];
+      const appsDataFull = await appsResFull.json();
+      
+      const recentPRs = Array.isArray(prsData) ? prsData.slice(0, 4) : [];
+      const latestApps = Array.isArray(appsDataFull) ? appsDataFull.filter(a => a.status === 'Pending').slice(0, 3) : [];
+
+      // Label helper for cleaning up repo names like "skillfest-platform"
+      const cleanRepoLabel = (name) => {
+        if (!name) return 'Unknown Cluster';
+        if (name.toLowerCase().includes('skillfest')) return 'Core Platform';
+        return name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+      };
 
       if (recentPRs.length === 0) {
         recentActivity.innerHTML = '<div class="p-12 text-center bg-zinc-50 rounded-2xl border border-dashed border-zinc-200"><p class="font-bold uppercase tracking-widest text-zinc-400 text-[10px]">No active audit logs found.</p></div>';
@@ -178,14 +214,38 @@ import { Users, GitPullRequest, CheckCircle, Activity, Trophy, Calendar, Setting
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2.5 mb-0.5">
                  <span class="text-indigo-600 font-bold text-[12px] tracking-tight">${pr.user_name || pr.user_id}</span>
-                 <span class="badge-status bg-emerald-50 text-emerald-700 border-emerald-100 !px-1.5 !py-0.2 !text-[8px]">Verified</span>
+                 <span class="badge-status bg-emerald-50 text-emerald-700 border-emerald-100 !px-1.5 !py-0.2 !text-[8px]">Verified Contribution</span>
               </div>
               <p class="font-semibold text-zinc-900 truncate text-sm">${pr.title}</p>
             </div>
             <div class="text-right hidden sm:block">
-              <p class="label-caps !text-zinc-400 tracking-wider !text-[9px] mb-0.5">Target</p>
-              <p class="font-bold text-[10px] text-zinc-600 uppercase italic">${pr.repo_name}</p>
+              <p class="label-caps !text-zinc-400 tracking-wider !text-[9px] mb-0.5">Node</p>
+              <p class="font-bold text-[10px] text-indigo-600 uppercase italic">${cleanRepoLabel(pr.repo_name)}</p>
             </div>
+          </div>
+        `).join('');
+      }
+
+      if (latestApps.length === 0) {
+        recentApplications.innerHTML = '<div class="p-12 text-center bg-zinc-50 rounded-2xl border border-dashed border-zinc-200"><p class="font-bold uppercase tracking-widest text-zinc-400 text-[10px]">No pending registrations found.</p></div>';
+      } else {
+        recentApplications.innerHTML = latestApps.map(app => `
+          <div class="flex items-center justify-between p-4 rounded-2xl hover:bg-zinc-50 transition-all duration-200 group border border-transparent hover:border-zinc-100">
+            <div class="flex items-center gap-5">
+              <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex-shrink-0 flex items-center justify-center font-bold border border-amber-100 shadow-sm">
+                ${app.user.username ? app.user.username[0].toUpperCase() : 'U'}
+              </div>
+              <div>
+                <div class="flex items-center gap-2.5 mb-0.5">
+                  <span class="text-zinc-950 font-bold text-sm tracking-tight">${app.user.username}</span>
+                  <span class="badge-status bg-amber-50 text-amber-700 border-amber-100 !px-1.5 !py-0.2 !text-[8px]">Awaiting Review</span>
+                </div>
+                <p class="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">${new Date(app.created_at).toLocaleDateString()}</p>
+              </div>
+            </div>
+            <a href="/applications" class="p-2.5 rounded-lg bg-zinc-950 text-white opacity-0 group-hover:opacity-100 transition-all shadow-md">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </a>
           </div>
         `).join('');
       }
