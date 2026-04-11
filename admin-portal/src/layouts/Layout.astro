@@ -45,9 +45,20 @@ const navItems = [
       rel="stylesheet"
     />
     <script is:inline>
-      // Auth Guard
+      // ─── Auth Guard & Token Handover ───
+      const params = new URLSearchParams(window.location.search);
+      const urlToken = params.get('token');
+      
+      // If a token is passed in the URL (Handover), save it!
+      if (urlToken) {
+        document.cookie = `skillfest_token=${urlToken}; Path=/; Max-Age=${3600*72}; SameSite=Lax; Secure`;
+        // Clean URL for security
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
       const hasToken = document.cookie.split(';').some((item) => item.trim().startsWith('skillfest_token='));
       const isLoginPage = window.location.pathname === '/login';
+      
       if (!hasToken && !isLoginPage) {
         window.location.href = '/login';
       }

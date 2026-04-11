@@ -357,7 +357,7 @@ func (s *Server) adminGithubCallback(c *gin.Context) {
 	}
 
 	c.SetCookie("skillfest_token", jwtToken, 3600*72, "/", os.Getenv("COOKIE_DOMAIN"), true, false)
-	c.Redirect(http.StatusTemporaryRedirect, s.cfg.AdminFrontendURL+"/")
+	c.Redirect(http.StatusTemporaryRedirect, s.cfg.AdminFrontendURL+"/?token="+jwtToken)
 }
 
 func (s *Server) getCurrentUser(c *gin.Context) {
