@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
-import { Github, Code, LogOut, Layers, Menu, X, ChevronRight, BarChart3, Info, Zap, Clock } from "lucide-react";
+import { Github, Code, LogOut, Layers, Menu, X, ChevronRight, BarChart3, Info, Zap, Clock, ScrollText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getApiUrl } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
@@ -65,6 +65,7 @@ export function Navbar() {
   const countdown = useCountdown(eventStatus?.phase === "active" ? eventStatus.end_date : eventStatus?.start_date || null);
 
   const links = [
+    { name: "Rules", href: "/rules", icon: ScrollText },
     { name: "Projects", href: "/projects", icon: Layers },
     { name: "Dashboard", href: "/dashboard", icon: Code },
     { name: "Leaderboard", href: "/leaderboard", icon: BarChart3 },
@@ -112,7 +113,7 @@ export function Navbar() {
               
               {/* Logo */}
               <div className="flex items-center justify-start flex-1">
-                <Link href="/" className="flex items-center gap-2.5 group shrink-0" onClick={closeMobile}>
+                <Link href="/" className={`flex items-center gap-2.5 group shrink-0 transition-opacity duration-300 ${mobileOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} onClick={closeMobile}>
                   <img src="/favicon.ico" alt="SkillFest" className="w-5 h-5 object-contain transition-transform group-hover:scale-110" />
                   <motion.span 
                     animate={{ 
@@ -139,7 +140,11 @@ export function Navbar() {
                   <Link 
                     key={l.name} 
                     href={l.href} 
-                    className="text-[11px] font-bold tracking-widest uppercase text-[#8C867E] hover:text-[#1A1A1A] dark:hover:text-white transition-all transform hover:-translate-y-0.5"
+                    className={`text-[11px] font-bold tracking-widest uppercase transition-all transform hover:-translate-y-0.5 ${
+                      scrolled 
+                        ? 'text-white/70 hover:text-white' 
+                        : 'text-[#8C867E] hover:text-[#1A1A1A]'
+                    }`}
                   >
                     {l.name}
                   </Link>
@@ -172,7 +177,7 @@ export function Navbar() {
                     <Github className="w-3.5 h-3.5" /> Sign In
                   </Link>
                 )}
-                <button onClick={() => setMobileOpen(o => !o)} className="md:hidden w-8 h-8 flex items-center justify-center text-[#1A1A1A] dark:text-white">
+                <button onClick={() => setMobileOpen(o => !o)} className={`md:hidden w-8 h-8 flex items-center justify-center transition-colors ${mobileOpen ? 'text-[#1A1A1A] dark:text-white' : (scrolled ? 'text-white' : 'text-[#1A1A1A]')}`}>
                   {mobileOpen ? <X size={20} /> : <Menu size={20} />}
                 </button>
               </div>
@@ -197,13 +202,8 @@ export function Navbar() {
               animate={{ x: 0 }} 
               exit={{ x: "100%" }} 
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 bottom-0 w-[80%] max-w-[320px] z-[46] bg-white dark:bg-[#111] border-l border-[#EBE6DF] dark:border-white/5 p-8 flex flex-col md:hidden"
+              className="fixed right-0 top-0 bottom-0 w-[80%] max-w-[320px] z-[46] bg-white dark:bg-[#111] border-l border-[#EBE6DF] dark:border-white/5 p-8 pt-24 flex flex-col md:hidden"
             >
-              <div className="flex items-center justify-between mb-12">
-                <span className="font-space-grotesk font-black text-sm tracking-tight text-[#1A1A1A] dark:text-white uppercase">SKILLFEST<span className="text-emerald-500">.</span></span>
-                <button onClick={closeMobile} className="text-[#8C867E] hover:text-[#1A1A1A] dark:hover:text-white transition-colors"><X size={24} /></button>
-              </div>
-              
               <div className="flex flex-col gap-1 flex-1">
                 {links.map((l) => (
                   <Link key={l.name} href={l.href} onClick={closeMobile} className="flex items-center justify-between px-5 py-4 text-[11px] font-bold tracking-widest uppercase text-[#8C867E] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5 transition-all rounded-xl">
