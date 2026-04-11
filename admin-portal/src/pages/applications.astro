@@ -1,0 +1,257 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Search, X, ExternalLink, CheckCircle, XCircle } from 'lucide-react';
+---
+
+<Layout title="Applications">
+  <div class="space-y-12">
+    <!-- ─── Page Header ─── -->
+    <div class="flex items-end justify-between border-b border-zinc-100 pb-10">
+      <div>
+        <h2 class="title-primary !text-4xl text-zinc-950">
+          Fresher <span class="text-indigo-600">Track</span>
+        </h2>
+        <p class="sub-header text-zinc-500 mt-2">Review and manage participant applications for the Fresher Track program.</p>
+      </div>
+      
+      <div class="flex gap-4">
+        <div class="relative group">
+          <Search size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
+          <input 
+            type="text" 
+            id="appSearch"
+            placeholder="Filter by GitHub username..."
+            class="pl-14 pr-6 py-3.5 rounded-xl bg-white border border-zinc-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50/50 outline-none transition-all w-80 text-sm font-semibold shadow-sm placeholder:text-zinc-300"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Applications Table ─── -->
+    <div class="card overflow-hidden shadow-md">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-zinc-100 bg-zinc-50/50">
+              <th class="px-8 py-5 label-caps !text-zinc-400">Applicant</th>
+              <th class="px-8 py-5 label-caps !text-zinc-400">Date Submitted</th>
+              <th class="px-8 py-5 label-caps !text-zinc-400">Portfolio</th>
+              <th class="px-8 py-5 label-caps !text-zinc-400">Status</th>
+              <th class="px-8 py-5 label-caps !text-zinc-400 text-right">Operations</th>
+            </tr>
+          </thead>
+          <tbody id="appTableBody" class="divide-y divide-zinc-100 bg-white">
+            <!-- Dynamic Content -->
+            <tr><td colspan="5" class="p-20 text-center label-caps !text-zinc-400 animate-pulse italic">Initializing registry...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Application Detail Modal ─── -->
+  <div id="detailModal" class="fixed inset-0 bg-zinc-950/40 backdrop-blur-xl z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-400">
+    <div class="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[32px] shadow-[0_32px_120px_-12px_rgba(0,0,0,0.35)] border border-zinc-200 relative scale-95 transition-transform duration-400" id="modalContainer">
+      <button id="closeModal" class="absolute top-8 right-8 p-3 hover:bg-zinc-100 rounded-xl transition-all group z-20">
+        <X size={24} className="text-zinc-400 group-hover:text-zinc-900 group-hover:rotate-90 transition-all duration-300" />
+      </button>
+      
+      <div class="p-12" id="detailContent">
+        <!-- Dynamic Content -->
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script is:inline>
+  const appTableBody = document.getElementById('appTableBody');
+  const searchInput = document.getElementById('appSearch');
+  const modal = document.getElementById('detailModal');
+  const modalContainer = document.getElementById('modalContainer');
+  const closeModal = document.getElementById('closeModal');
+  const detailContent = document.getElementById('detailContent');
+
+  let allApplications = [];
+
+  async function loadApplications() {
+    try {
+      const res = await fetch('/api/admin/applications');
+      allApplications = await res.json();
+      renderApplications(allApplications);
+    } catch (e) {
+      console.error('Failed to load applications', e);
+      appTableBody.innerHTML = `<tr><td colspan="5" class="p-20 text-center text-rose-500 font-bold">Failed to load applications.</td></tr>`;
+    }
+  }
+
+  function renderApplications(apps) {
+    if (!apps || apps.length === 0) {
+      appTableBody.innerHTML = `<tr><td colspan="5" class="p-20 text-center label-caps !text-zinc-400 italic">No applications found.</td></tr>`;
+      return;
+    }
+    
+    appTableBody.innerHTML = apps.map(app => {
+        const statusColor = app.status === 'Approved' ? 'text-emerald-700 bg-emerald-50 border-emerald-100' : 
+                          app.status === 'Rejected' ? 'text-rose-700 bg-rose-50 border-rose-100' : 
+                          'text-amber-700 bg-amber-50 border-amber-100';
+        
+        return `
+          <tr class="hover:bg-zinc-50/50 transition-all group cursor-pointer" onclick="showDetails('${app.id}')">
+            <td class="px-8 py-6">
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-lg bg-zinc-100 border border-zinc-200 flex items-center justify-center font-bold text-zinc-400 group-hover:bg-zinc-950 group-hover:text-white transition-all duration-300">
+                  ${app.user.username ? app.user.username[0].toUpperCase() : 'U'}
+                </div>
+                <div>
+                  <p class="font-bold text-zinc-950 text-[14px] leading-none">${app.user.username}</p>
+                  <p class="text-[10px] text-zinc-500 font-medium mt-1 opacity-60">${app.user.email || 'No email provided'}</p>
+                </div>
+              </div>
+            </td>
+            <td class="px-8 py-6 text-sm text-zinc-500 font-medium font-mono">
+              ${new Date(app.created_at).toLocaleDateString()}
+            </td>
+            <td class="px-8 py-6">
+              ${app.portfolio_url ? `
+                <a href="${app.portfolio_url}" target="_blank" onclick="event.stopPropagation()" class="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 transition-colors">
+                  <span class="text-[11px] font-bold uppercase tracking-tight">Visit Site</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 22 3 22 10"/><line x1="10" y1="14" x2="22" y2="2"/></svg>
+                </a>
+              ` : '<span class="text-zinc-300 italic text-[11px] font-bold uppercase tracking-tight">No Portfolio</span>'}
+            </td>
+            <td class="px-8 py-6">
+              <span class="px-2.5 py-1 rounded-lg border font-bold text-[9px] uppercase tracking-widest ${statusColor}">
+                ${app.status || 'Pending'}
+              </span>
+            </td>
+            <td class="px-8 py-6 text-right" onclick="event.stopPropagation()">
+              <div class="flex items-center justify-end gap-2">
+                <button 
+                  onclick="updateStatus('${app.id}', 'Approved')"
+                  class="p-2 rounded-lg bg-zinc-50 border border-zinc-200 text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all"
+                  title="Approve"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </button>
+                <button 
+                  onclick="updateStatus('${app.id}', 'Rejected')"
+                  class="p-2 rounded-lg bg-zinc-50 border border-zinc-200 text-zinc-400 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all"
+                  title="Reject"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+    }).join('');
+  }
+
+  window.showDetails = (id) => {
+    const app = allApplications.find(a => a.id === id);
+    if (!app) return;
+
+    detailContent.innerHTML = `
+      <div class="space-y-8">
+        <div class="flex items-center gap-6 pb-8 border-b border-zinc-100">
+           <div class="w-20 h-20 rounded-2xl bg-zinc-950 flex items-center justify-center text-4xl font-bold text-white shadow-xl">
+             ${app.user.username[0].toUpperCase()}
+           </div>
+           <div>
+             <h3 class="text-3xl font-black text-zinc-950 tracking-tighter">${app.user.username}</h3>
+             <p class="text-zinc-500 font-medium">${app.user.email || 'No email shared'}</p>
+             <div class="flex gap-3 mt-4">
+                <span class="px-2 py-0.5 rounded bg-zinc-100 text-zinc-600 font-black text-[9px] uppercase tracking-widest border border-zinc-200">UID: ${app.user_id.slice(0,8)}</span>
+                <span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-black text-[9px] uppercase tracking-widest border border-indigo-100">Fresher Track</span>
+             </div>
+           </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-8">
+          <div class="space-y-2">
+            <p class="label-caps !text-zinc-400">Portfolio</p>
+            ${app.portfolio_url ? `
+              <a href="${app.portfolio_url}" target="_blank" class="text-indigo-600 font-bold hover:underline flex items-center gap-2">
+                ${new URL(app.portfolio_url).hostname}
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 22 3 22 10"/><line x1="10" y1="14" x2="22" y2="2"/></svg>
+              </a>
+            ` : '<p class="text-zinc-400 italic">No URL provided</p>'}
+          </div>
+          <div class="space-y-2">
+            <p class="label-caps !text-zinc-400">Applied On</p>
+            <p class="text-zinc-600 font-bold">${new Date(app.created_at).toLocaleString()}</p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <p class="label-caps !text-zinc-400">Experience Summary</p>
+          <div class="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 text-zinc-700 leading-relaxed font-medium">
+            ${app.experience_summary || 'No summary provided.'}
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <p class="label-caps !text-zinc-400">Statement of Purpose</p>
+          <div class="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 text-zinc-700 leading-relaxed font-medium">
+            ${app.statement || 'No statement provided.'}
+          </div>
+        </div>
+
+        <div class="pt-8 border-t border-zinc-100 flex items-center justify-between">
+          <div class="flex gap-3">
+             <button onclick="updateStatus('${app.id}', 'Approved')" class="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">Approve Application</button>
+             <button onclick="updateStatus('${app.id}', 'Rejected')" class="px-6 py-3 bg-white text-zinc-400 border border-zinc-200 rounded-xl font-bold text-xs uppercase tracking-widest hover:text-rose-600 hover:border-rose-200 transition-all">Reject</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+      modal.classList.remove('opacity-0');
+      modalContainer.classList.remove('scale-95');
+    }, 10);
+  };
+
+  window.updateStatus = async (id, status) => {
+    if (!confirm(`Are you sure you want to change this application status to ${status}?`)) return;
+    
+    try {
+      const res = await fetch(`/api/admin/applications/${id}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      
+      if (res.ok) {
+        if (modal && !modal.classList.contains('hidden')) closeModal.click();
+        loadApplications();
+      } else {
+        alert('Failed to update status');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  closeModal.onclick = () => {
+    modal.classList.add('opacity-0');
+    modalContainer.classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 400);
+  };
+
+  window.onclick = (event) => {
+    if (event.target === modal) closeModal.click();
+  };
+
+  searchInput.addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    const filtered = allApplications.filter(app => 
+      app.user.username.toLowerCase().includes(term) ||
+      (app.user.email && app.user.email.toLowerCase().includes(term))
+    );
+    renderApplications(filtered);
+  });
+
+  loadApplications();
+</script>

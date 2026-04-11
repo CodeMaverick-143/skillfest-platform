@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { Users, GitPullRequest, CheckCircle, Activity, Trophy, Calendar, Settings } from 'lucide-react';
+import { Users, GitPullRequest, CheckCircle, Activity, Trophy, Calendar, Settings, ClipboardList } from 'lucide-react';
 
 // Fetch stats (Server-side for initial render if needed, but here we can just do a placeholder or fetch)
 // For simplicity in this demo environment, let's assume we fetch on client or use placeholder data for layout
@@ -140,9 +140,13 @@ import { Users, GitPullRequest, CheckCircle, Activity, Trophy, Calendar, Setting
       const challengesData = await challengesRes.json();
       const activeChallenges = Array.isArray(challengesData) ? challengesData.length : 0;
 
+      const appsRes = await fetch('/api/admin/applications');
+      const appsData = await appsRes.json();
+      const pendingApps = Array.isArray(appsData) ? appsData.filter(a => a.status === 'Pending').length : 0;
+
       const stats = [
         { label: 'Platform Users', value: statsData.total_users || 0, color: 'text-indigo-600', bg: 'bg-indigo-50/50', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
-        { label: 'PR Pipeline', value: statsData.total_prs || 0, color: 'text-amber-600', bg: 'bg-amber-50/50', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" x2="6" y1="9" y2="21"/></svg>` },
+        { label: 'Pending Applications', value: pendingApps, color: 'text-amber-600', bg: 'bg-amber-50/50', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>` },
         { label: 'Validated Pulls', value: statsData.merged_prs || 0, color: 'text-emerald-600', bg: 'bg-emerald-50/50', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>` },
         { label: 'Live Clusters', value: activeChallenges, color: 'text-rose-600', bg: 'bg-rose-50/50', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>` },
       ];
