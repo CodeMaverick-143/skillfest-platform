@@ -1,6 +1,6 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import { Search, X } from 'lucide-react';
+import Layout from "../layouts/Layout.astro";
+import { Search, X } from "lucide-react";
 ---
 
 <Layout title="Participants">
@@ -11,14 +11,20 @@ import { Search, X } from 'lucide-react';
         <h2 class="title-primary !text-4xl text-zinc-950">
           Global <span class="text-indigo-600">Directory</span>
         </h2>
-        <p class="sub-header text-zinc-500 mt-2">Manage participant verification, points allocation, and administrative access control.</p>
+        <p class="sub-header text-zinc-500 mt-2">
+          Manage participant verification, points allocation, and administrative
+          access control.
+        </p>
       </div>
-      
+
       <div class="flex gap-4">
         <div class="relative group">
-          <Search size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
-          <input 
-            type="text" 
+          <Search
+            size={16}
+            className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-indigo-600 transition-colors"
+          />
+          <input
+            type="text"
             id="userSearch"
             placeholder="Filter by GitHub identifier..."
             class="pl-14 pr-6 py-3.5 rounded-xl bg-white border border-zinc-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50/50 outline-none transition-all w-80 text-sm font-semibold shadow-sm placeholder:text-zinc-300"
@@ -37,7 +43,9 @@ import { Search, X } from 'lucide-react';
               <th class="px-8 py-5 label-caps !text-zinc-400">Total Points</th>
               <th class="px-8 py-5 label-caps !text-zinc-400">Milestones</th>
               <th class="px-8 py-5 label-caps !text-zinc-400">System Roles</th>
-              <th class="px-8 py-5 label-caps !text-zinc-400 text-right">Operations</th>
+              <th class="px-8 py-5 label-caps !text-zinc-400 text-right"
+                >Operations</th
+              >
             </tr>
           </thead>
           <tbody id="userTableBody" class="divide-y divide-zinc-100 bg-white">
@@ -49,12 +57,24 @@ import { Search, X } from 'lucide-react';
   </div>
 
   <!-- ─── Management & Analytics Modal ─── -->
-  <div id="analyticsModal" class="fixed inset-0 bg-zinc-950/40 backdrop-blur-xl z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-400">
-    <div class="bg-white w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-[32px] shadow-[0_32px_120px_-12px_rgba(0,0,0,0.35)] border border-zinc-200 relative scale-95 transition-transform duration-400" id="modalContainer">
-      <button id="closeModal" class="absolute top-8 right-8 p-3 hover:bg-zinc-100 rounded-xl transition-all group z-20">
-        <X size={24} className="text-zinc-400 group-hover:text-zinc-900 group-hover:rotate-90 transition-all duration-300" />
+  <div
+    id="analyticsModal"
+    class="fixed inset-0 bg-zinc-950/40 backdrop-blur-xl z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-400"
+  >
+    <div
+      class="bg-white w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-[32px] shadow-[0_32px_120px_-12px_rgba(0,0,0,0.35)] border border-zinc-200 relative scale-95 transition-transform duration-400"
+      id="modalContainer"
+    >
+      <button
+        id="closeModal"
+        class="absolute top-8 right-8 p-3 hover:bg-zinc-100 rounded-xl transition-all group z-20"
+      >
+        <X
+          size={24}
+          className="text-zinc-400 group-hover:text-zinc-900 group-hover:rotate-90 transition-all duration-300"
+        />
       </button>
-      
+
       <div class="p-16" id="analyticsContent">
         <!-- Dynamic Content -->
       </div>
@@ -63,22 +83,22 @@ import { Search, X } from 'lucide-react';
 </Layout>
 
 <script is:inline>
-  const userTableBody = document.getElementById('userTableBody');
-  const searchInput = document.getElementById('userSearch');
-  const modal = document.getElementById('analyticsModal');
-  const modalContainer = document.getElementById('modalContainer');
-  const closeModal = document.getElementById('closeModal');
-  const analyticsContent = document.getElementById('analyticsContent');
+  const userTableBody = document.getElementById("userTableBody");
+  const searchInput = document.getElementById("userSearch");
+  const modal = document.getElementById("analyticsModal");
+  const modalContainer = document.getElementById("modalContainer");
+  const closeModal = document.getElementById("closeModal");
+  const analyticsContent = document.getElementById("analyticsContent");
 
   let allUsers = [];
 
   async function loadUsers() {
     try {
-      const res = await fetch('/api/admin/users');
+      const res = await fetch("/api/admin/users");
       allUsers = await res.json();
       renderUsers(allUsers);
     } catch (e) {
-      console.error('Failed to load users', e);
+      console.error("Failed to load users", e);
     }
   }
 
@@ -87,19 +107,29 @@ import { Search, X } from 'lucide-react';
       userTableBody.innerHTML = `<tr><td colspan="5" class="p-20 text-center label-caps !text-zinc-400 italic">No registered participants found.</td></tr>`;
       return;
     }
-    
-    userTableBody.innerHTML = users.map(user => {
-        const level = Math.floor(user.points / 1000) + 1;
+
+    userTableBody.innerHTML = users
+      .map((user) => {
+        const getLevel = (pts) => {
+          if (pts >= 100000) return 'Elite';
+          if (pts >= 50000) return 'Lead';
+          if (pts >= 25000) return 'Core';
+          if (pts >= 10000) return 'Maintainer';
+          if (pts >= 2500) return 'Builder';
+          if (pts >= 1000) return 'Contributor';
+          return 'Explorer';
+        };
+        const level = getLevel(user.points);
         return `
           <tr class="hover:bg-zinc-50/50 transition-all group">
             <td class="px-8 py-6">
               <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center font-bold text-zinc-400 group-hover:bg-zinc-950 group-hover:text-white transition-all duration-300">
-                  ${user.username ? user.username[0].toUpperCase() : 'U'}
+                  ${user.username ? user.username[0].toUpperCase() : "U"}
                 </div>
                 <div>
                   <p class="font-bold text-zinc-950 text-[15px] tracking-tight leading-none">${user.username}</p>
-                  <p class="text-[11px] text-zinc-500 font-medium mt-1.5 opacity-60">${user.email || 'no-email@github.com'}</p>
+                  <p class="text-[11px] text-zinc-500 font-medium mt-1.5 opacity-60">${user.email || "no-email@github.com"}</p>
                 </div>
               </div>
             </td>
@@ -117,27 +147,31 @@ import { Search, X } from 'lucide-react';
             </td>
             <td class="px-8 py-6">
                <div class="flex flex-col gap-2">
-                  <span class="badge-status bg-indigo-50 text-indigo-700 border-indigo-100 self-start !px-2 !py-0.5 !text-[9px]">Lvl ${level}</span>
+                  <span class="badge-status bg-indigo-50 text-indigo-700 border-indigo-100 self-start !px-2 !py-0.5 !text-[9px]">${level}</span>
                   <div class="w-20 h-1 bg-zinc-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-indigo-500 rounded-full" style="width: ${(user.points % 1000) / 10}%"></div>
+                    <div class="h-full bg-indigo-500 rounded-full" style="width: ${Math.min((user.points / 100000) * 100, 100)}%"></div>
                   </div>
                </div>
             </td>
             <td class="px-8 py-6">
               <div class="flex flex-wrap items-center gap-2">
-                ${user.is_admin ? '<span class="px-2 py-0.5 rounded bg-zinc-950 text-white font-bold text-[8px] uppercase tracking-widest leading-none">Admin</span>' : ''}
-                ${user.is_reviewer ? '<span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-bold text-[8px] uppercase tracking-widest leading-none">Reviewer</span>' : ''}
+                ${user.is_admin ? '<span class="px-2 py-0.5 rounded bg-zinc-950 text-white font-bold text-[8px] uppercase tracking-widest leading-none">Admin</span>' : ""}
+                ${user.is_reviewer ? '<span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-bold text-[8px] uppercase tracking-widest leading-none">Reviewer</span>' : ""}
                 <div class="flex items-center gap-1.5 ml-2">
-                  <div class="w-1.5 h-1.5 rounded-full ${user.is_hidden ? 'bg-amber-400' : 'bg-emerald-500'}"></div>
-                  <span class="text-[9px] font-bold uppercase tracking-wider ${user.is_hidden ? 'text-amber-600' : 'text-emerald-700'}">
-                    ${user.is_hidden ? 'Hidden' : 'Active'}
+                  <div class="w-1.5 h-1.5 rounded-full ${user.is_hidden ? "bg-amber-400" : "bg-emerald-500"}"></div>
+                  <span class="text-[9px] font-bold uppercase tracking-wider ${user.is_hidden ? "text-amber-600" : "text-emerald-700"}">
+                    ${user.is_hidden ? "Hidden" : "Active"}
                   </span>
                 </div>
-                ${user.is_banned ? `
+                ${
+                  user.is_banned
+                    ? `
                   <div class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-rose-50 border border-rose-100">
                     <span class="text-[9px] font-bold uppercase tracking-wider text-rose-600">Banned</span>
                   </div>
-                ` : ''}
+                `
+                    : ""
+                }
               </div>
             </td>
             <td class="px-8 py-6 text-right">
@@ -150,31 +184,32 @@ import { Search, X } from 'lucide-react';
             </td>
           </tr>
         `;
-    }).join('');
+      })
+      .join("");
   }
 
   async function showUserManagement(userId) {
-    const user = allUsers.find(u => u.id === userId);
+    const user = allUsers.find((u) => u.id === userId);
     if (!user) return;
 
-    modal.classList.remove('hidden');
+    modal.classList.remove("hidden");
     setTimeout(() => {
-      modal.classList.add('opacity-100');
-      modalContainer.classList.remove('scale-95');
+      modal.classList.add("opacity-100");
+      modalContainer.classList.remove("scale-95");
     }, 10);
-    
+
     analyticsContent.innerHTML = `
       <div class="flex flex-col items-center justify-center py-40 gap-6">
         <div class="w-12 h-12 border-4 border-zinc-100 border-t-indigo-600 rounded-full animate-spin"></div>
         <p class="label-caps animate-pulse text-zinc-400">Syncing user matrix...</p>
       </div>`;
-    
+
     try {
       const res = await fetch(`/api/admin/users/${userId}/analytics`);
       const data = await res.json();
-      
+
       const contributions = data.contributions || [];
-      
+
       analyticsContent.innerHTML = `
         <div class="flex items-start justify-between mb-12">
           <div>
@@ -210,7 +245,11 @@ import { Search, X } from 'lucide-react';
                 <h4 class="label-caps !text-zinc-300 tracking-widest uppercase">System Ledger</h4>
                 <div class="h-px flex-1 bg-zinc-100"></div>
               </div>
-              ${contributions.slice(0, 5).map(c => `
+              ${
+                contributions
+                  .slice(0, 5)
+                  .map(
+                    (c) => `
                 <div class="flex items-center justify-between p-5 bg-zinc-50 border border-zinc-100 rounded-2xl">
                   <div class="flex items-center gap-4">
                     <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-zinc-100 font-bold text-[8px] text-zinc-400 uppercase tracking-widest">${c.type[0]}</div>
@@ -221,7 +260,11 @@ import { Search, X } from 'lucide-react';
                   </div>
                   <span class="font-bold text-xl text-emerald-600 tabular-nums">+${c.points}</span>
                 </div>
-              `).join('') || '<p class="label-caps !text-zinc-400 italic text-center py-10">No recent activity.</p>'}
+              `,
+                  )
+                  .join("") ||
+                '<p class="label-caps !text-zinc-400 italic text-center py-10">No recent activity.</p>'
+              }
             </div>
           </div>
 
@@ -236,7 +279,7 @@ import { Search, X } from 'lucide-react';
                     <p class="font-bold text-zinc-950 text-sm">Administrator Access</p>
                     <p class="text-[10px] text-zinc-400 uppercase tracking-widest mt-1">Full Hub Control</p>
                   </div>
-                  <input type="checkbox" id="manage_admin" ${user.is_admin ? 'checked' : ''} class="w-5 h-5 rounded-lg border-zinc-300 text-indigo-600 focus:ring-indigo-600 transition-all cursor-pointer">
+                  <input type="checkbox" id="manage_admin" ${user.is_admin ? "checked" : ""} class="w-5 h-5 rounded-lg border-zinc-300 text-indigo-600 focus:ring-indigo-600 transition-all cursor-pointer">
                 </label>
 
                 <label class="flex items-center justify-between group cursor-pointer">
@@ -244,7 +287,7 @@ import { Search, X } from 'lucide-react';
                     <p class="font-bold text-zinc-950 text-sm">Reviewer Privileges</p>
                     <p class="text-[10px] text-zinc-400 uppercase tracking-widest mt-1">Audit Authorization</p>
                   </div>
-                  <input type="checkbox" id="manage_reviewer" ${user.is_reviewer ? 'checked' : ''} class="w-5 h-5 rounded-lg border-zinc-300 text-indigo-600 focus:ring-indigo-600 transition-all cursor-pointer">
+                  <input type="checkbox" id="manage_reviewer" ${user.is_reviewer ? "checked" : ""} class="w-5 h-5 rounded-lg border-zinc-300 text-indigo-600 focus:ring-indigo-600 transition-all cursor-pointer">
                 </label>
 
                 <div class="h-px w-full bg-zinc-200 my-4"></div>
@@ -254,7 +297,7 @@ import { Search, X } from 'lucide-react';
                     <p class="font-bold text-zinc-950 text-sm">Visibility Cloak</p>
                     <p class="text-[10px] text-zinc-400 uppercase tracking-widest mt-1">Hide from Leaderboard</p>
                   </div>
-                  <input type="checkbox" id="manage_hidden" ${user.is_hidden ? 'checked' : ''} class="w-5 h-5 rounded-lg border-zinc-300 text-indigo-600 focus:ring-indigo-600 transition-all cursor-pointer">
+                  <input type="checkbox" id="manage_hidden" ${user.is_hidden ? "checked" : ""} class="w-5 h-5 rounded-lg border-zinc-300 text-indigo-600 focus:ring-indigo-600 transition-all cursor-pointer">
                 </label>
 
                 <label class="flex items-center justify-between group cursor-pointer">
@@ -262,7 +305,7 @@ import { Search, X } from 'lucide-react';
                     <p class="font-bold text-rose-600 text-sm">Banned Status</p>
                     <p class="text-[10px] text-rose-300 uppercase tracking-widest mt-1">Revoke Application Access</p>
                   </div>
-                  <input type="checkbox" id="manage_banned" ${user.is_banned ? 'checked' : ''} class="w-5 h-5 rounded-lg border-rose-200 text-rose-600 focus:ring-rose-600 transition-all cursor-pointer">
+                  <input type="checkbox" id="manage_banned" ${user.is_banned ? "checked" : ""} class="w-5 h-5 rounded-lg border-rose-200 text-rose-600 focus:ring-rose-600 transition-all cursor-pointer">
                 </label>
 
                 <button 
@@ -278,79 +321,85 @@ import { Search, X } from 'lucide-react';
         </div>
       `;
     } catch (e) {
-      analyticsContent.innerHTML = '<div class="text-center py-40"><p class="title-secondary !text-rose-600 mb-2">Matrix Read Error</p></div>';
+      analyticsContent.innerHTML =
+        '<div class="text-center py-40"><p class="title-secondary !text-rose-600 mb-2">Matrix Read Error</p></div>';
     }
   }
 
   async function propagateAccessChanges(userId) {
-    const isAdmin = document.getElementById('manage_admin').checked;
-    const isReviewer = document.getElementById('manage_reviewer').checked;
-    const isHidden = document.getElementById('manage_hidden').checked;
-    const isBanned = document.getElementById('manage_banned').checked;
-    const saveBtn = document.getElementById('saveAccessBtn');
+    const isAdmin = document.getElementById("manage_admin").checked;
+    const isReviewer = document.getElementById("manage_reviewer").checked;
+    const isHidden = document.getElementById("manage_hidden").checked;
+    const isBanned = document.getElementById("manage_banned").checked;
+    const saveBtn = document.getElementById("saveAccessBtn");
 
-    saveBtn.innerText = 'PROPAGATING...';
+    saveBtn.innerText = "PROPAGATING...";
     saveBtn.disabled = true;
 
     try {
       const res = await fetch(`/api/admin/users/${userId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          is_hidden: isHidden, 
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          is_hidden: isHidden,
           is_banned: isBanned,
           is_admin: isAdmin,
-          is_reviewer: isReviewer
-        })
+          is_reviewer: isReviewer,
+        }),
       });
       if (res.ok) {
-        showSuccess('Node status updated.');
+        showSuccess("Node status updated.");
         await loadUsers();
         hideModal();
       } else {
-        alert('Protocol update failed.');
+        alert("Protocol update failed.");
       }
     } catch (e) {
-      alert('Transmission interrupted.');
+      alert("Transmission interrupted.");
     } finally {
-      saveBtn.innerText = 'Apply Protocol Updates';
+      saveBtn.innerText = "Apply Protocol Updates";
       saveBtn.disabled = false;
     }
   }
 
   async function updatePoints(userId, currentPoints) {
-    const newPoints = prompt(`Enter new points for user (Current: ${currentPoints}):`, currentPoints);
+    const newPoints = prompt(
+      `Enter new points for user (Current: ${currentPoints}):`,
+      currentPoints,
+    );
     if (newPoints === null || newPoints === "" || isNaN(newPoints)) return;
 
     try {
       const res = await fetch(`/api/admin/users/${userId}/points`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ points: parseInt(newPoints) })
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ points: parseInt(newPoints) }),
       });
       if (res.ok) {
-        showSuccess('User credits updated.');
+        showSuccess("User credits updated.");
         loadUsers();
       }
     } catch (e) {}
   }
 
   function showSuccess(msg) {
-    console.log('SUCCESS:', msg);
+    console.log("SUCCESS:", msg);
   }
 
   function hideModal() {
-    modal.classList.remove('opacity-100');
-    modalContainer.classList.add('scale-95');
-    setTimeout(() => modal.classList.add('hidden'), 300);
+    modal.classList.remove("opacity-100");
+    modalContainer.classList.add("scale-95");
+    setTimeout(() => modal.classList.add("hidden"), 300);
   }
 
   closeModal.onclick = hideModal;
-  modal.onclick = (e) => { if(e.target === modal) hideModal(); };
-  
+  modal.onclick = (e) => {
+    if (e.target === modal) hideModal();
+  };
+
   searchInput.oninput = (e) => {
     const val = e.target.value.toLowerCase();
-    renderUsers(allUsers.filter(u => u.username.toLowerCase().includes(val)));
+    renderUsers(allUsers.filter((u) => u.username.toLowerCase().includes(val)));
   };
 
   window.showUserManagement = showUserManagement;

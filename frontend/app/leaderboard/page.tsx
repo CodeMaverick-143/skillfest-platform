@@ -13,6 +13,16 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [visible, setVisible] = useState(true);
 
+  const calculateLevel = (points: number) => {
+    if (points >= 100000) return "Elite";
+    if (points >= 50000) return "Lead";
+    if (points >= 25000) return "Core";
+    if (points >= 10000) return "Maintainer";
+    if (points >= 2500) return "Builder";
+    if (points >= 1000) return "Contributor";
+    return "Explorer";
+  };
+
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
@@ -34,8 +44,8 @@ export default function LeaderboardPage() {
           rank: i + 1,
           username: u.username,
           points: u.points,
-          prs: u.prs || 0, // Mock PRs if backend doesn't provide
-          level: u.level || "Newcomer",
+          prs: u.prs || 0,
+          level: calculateLevel(u.points),
           avatar_url: u.avatar_url,
           avatar: u.username.substring(0, 2).toUpperCase()
         })) : [];
@@ -47,13 +57,13 @@ export default function LeaderboardPage() {
         setLoading(false);
       }
     };
-    
+
     fetchLeaderboard();
   }, []);
 
-  const levels = ["All Levels", "Expert", "Advanced", "Intermediate", "Beginner", "Newcomer"];
+  const levels = ["All Levels", "Elite", "Lead", "Core", "Maintainer", "Builder", "Contributor", "Explorer"];
 
-  const filteredContributors = contributors.filter(c => 
+  const filteredContributors = contributors.filter(c =>
     (filter === "All Levels" || c.level === filter) &&
     c.username.toLowerCase().includes(search.toLowerCase())
   );
@@ -74,7 +84,7 @@ export default function LeaderboardPage() {
         <div className="space-y-12">
           {/* Header */}
           <div className="text-center space-y-6">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="inline-flex p-4 rounded-2xl bg-[#F5F2EA] text-[#1A1A1A] mb-4 border border-[#EBE6DF] shadow-sm"
@@ -88,27 +98,26 @@ export default function LeaderboardPage() {
           </div>
 
           {/* Controls */}
-          <div className="flex flex-col md:flex-row gap-6 items-center justify-between p-6 rounded-2xl bg-[#F5F2EA] border border-[#EBE6DF] shadow-sm">
-            <div className="relative w-full md:w-96 group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8C867E] group-focus-within:text-[#1A1A1A] transition-colors" />
+          <div className="flex flex-col lg:flex-row gap-6 items-center justify-between p-4 md:p-6 rounded-3xl bg-[#F5F2EA] border border-[#EBE6DF] shadow-sm">
+            <div className="relative w-full lg:w-80 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C867E] group-focus-within:text-[#1A1A1A] transition-colors" />
               <input 
                 type="text" 
                 placeholder="Search ranks..."
-                className="w-full pl-12 pr-4 py-3 bg-[#FDFBF7] border border-[#EBE6DF] rounded-xl focus:ring-1 focus:ring-[#1A1A1A] focus:border-[#1A1A1A] outline-none transition-all font-medium text-[#1A1A1A] placeholder-[#8C867E] font-sans"
+                className="w-full pl-10 pr-4 py-2.5 bg-[#FDFBF7] border border-[#EBE6DF] rounded-2xl focus:ring-1 focus:ring-[#1A1A1A] focus:border-[#1A1A1A] outline-none transition-all font-medium text-sm text-[#1A1A1A] placeholder-[#8C867E] font-sans"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 font-bold hide-scrollbar">
-              <Filter className="w-5 h-5 text-[#8C867E] mr-2 flex-shrink-0" />
+            <div className="flex items-center gap-1.5 overflow-x-auto w-full lg:w-auto font-bold hide-scrollbar pb-1 lg:pb-0">
               {levels.map(l => (
                 <button
                   key={l}
                   onClick={() => setFilter(l)}
-                  className={`px-4 py-2 rounded-xl text-xs whitespace-nowrap transition-all border ${
+                  className={`px-4 py-2 rounded-xl text-[10px] uppercase tracking-wider whitespace-nowrap transition-all border ${
                     filter === l 
-                      ? "bg-[#1A1A1A] text-white border-[#1A1A1A]" 
+                      ? "bg-[#1A1A1A] text-white border-[#1A1A1A] shadow-md shadow-black/10" 
                       : "bg-[#FDFBF7] text-[#6B6661] border-[#EBE6DF] hover:border-[#1A1A1A] hover:text-[#1A1A1A]"
                   }`}
                 >
@@ -137,7 +146,7 @@ export default function LeaderboardPage() {
                   </thead>
                   <tbody className="divide-y divide-[#EBE6DF]">
                     {filteredContributors.map((c) => (
-                      <motion.tr 
+                      <motion.tr
                         key={c.username}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
