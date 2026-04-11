@@ -53,7 +53,7 @@ services:
         NEXT_PUBLIC_BACKEND_URL: https://backend-skillfest.nstsdc.org
     restart: always
     ports:
-      - "3000:3000"
+      - "3005:3000"
     networks:
       - skillfest-net
 
