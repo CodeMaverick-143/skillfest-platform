@@ -52,11 +52,11 @@ func (r *PostgresContributionRepository) GetFilteredByUser(ctx context.Context, 
 	err := r.db.WithContext(ctx).
 		Table("contributions").
 		Select("contributions.*").
-		Joins("JOIN repositories ON contributions.repo_id = repositories.id").
+		Joins("LEFT JOIN repositories ON contributions.repo_id = repositories.id").
 		Where("contributions.user_id = ?", userID).
-		Where("repositories.is_active = ?", true).
-		Where("contributions.occurred_at >= repositories.start_date").
-		Where("contributions.occurred_at <= repositories.end_date").
+		Where("(repositories.is_active = ? OR contributions.repo_id IS NULL)", true).
+		Where("(contributions.occurred_at >= repositories.start_date OR contributions.repo_id IS NULL)").
+		Where("(contributions.occurred_at <= repositories.end_date OR contributions.repo_id IS NULL)").
 		Order("contributions.occurred_at desc").
 		Find(&contributions).Error
 	return contributions, err

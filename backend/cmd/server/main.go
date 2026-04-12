@@ -84,7 +84,7 @@ func main() {
 	logger := service.NewPostgresLoggingService(auditRepo, syncLogRepo)
 
 	pointsService := service.NewPointsService(userRepo, prRepo, repoRepo, contributionRepo)
-	adminService := service.NewAdminService(fresherRepo, userRepo, prRepo, contributionRepo, repoRepo)
+	adminService := service.NewAdminService(fresherRepo, userRepo, prRepo, contributionRepo, repoRepo, pointsService)
 	analyticsService := service.NewAnalyticsService(contributionRepo, cache)
 
 	// 4. Start Background Worker

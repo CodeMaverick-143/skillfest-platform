@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	"github.com/CodeMaverick-143/skillfest-platform/backend/pkg/github"
+	// "strings"
+
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
-	gh "github.com/google/go-github/v60/github"
+	"github.com/CodeMaverick-143/skillfest-platform/backend/pkg/github"
 )
 
 type GitHubService struct {
@@ -25,17 +25,31 @@ func (s *GitHubService) GetClient() *github.Client {
 func (s *GitHubService) FetchRepoContributions(ctx context.Context, repo model.Repository) ([]model.Contribution, error) {
 	var contributions []model.Contribution
 
-	// 1. Fetch PRs
-	query := fmt.Sprintf("repo:%s/%s is:pr created:%s..%s", repo.Owner, repo.Name, repo.StartDate.Format("2006-01-02"), repo.EndDate.Format("2006-01-02"))
+	dateFilter := ""
+	if !repo.StartDate.IsZero() && !repo.EndDate.IsZero() {
+		dateFilter = fmt.Sprintf(" merged:%s..%s", repo.StartDate.Format("2006-01-02"), repo.EndDate.Format("2006-01-02"))
+	} else if !repo.StartDate.IsZero() {
+		dateFilter = fmt.Sprintf(" merged:>=%s", repo.StartDate.Format("2006-01-02"))
+	} else if !repo.EndDate.IsZero() {
+		dateFilter = fmt.Sprintf(" merged:<=%s", repo.EndDate.Format("2006-01-02"))
+	}
+
+	query := fmt.Sprintf("repo:%s/%s is:pr is:merged%s", repo.Owner, repo.Name, dateFilter)
 	issues, err := s.client.SearchIssues(ctx, query)
-	if err == nil {
+	if err != nil {
+		fmt.Printf("SearchIssues error for query %q: %v\n", query, err)
+	} else {
 		for _, issue := range issues {
+			occurredAt := issue.GetCreatedAt().Time
+			if issue.ClosedAt != nil {
+				occurredAt = issue.GetClosedAt().Time
+			}
 			contributions = append(contributions, model.Contribution{
-				RepoID:     repo.ID,
+				RepoID:     &repo.ID,
 				Type:       "PR",
 				ExternalID: fmt.Sprintf("%d", *issue.Number),
-				Points:     s.calculatePoints(issue.Labels),
-				OccurredAt: issue.GetCreatedAt().Time,
+				Points:     0, // Manual review will allot points from repo settings
+				OccurredAt: occurredAt,
 				Metadata:   fmt.Sprintf(`{"title": %q, "author": %q}`, *issue.Title, *issue.User.Login),
 			})
 		}
@@ -50,10 +64,10 @@ func (s *GitHubService) FetchRepoContributions(ctx context.Context, repo model.R
 				author = *commit.Author.Login
 			}
 			contributions = append(contributions, model.Contribution{
-				RepoID:     repo.ID,
+				RepoID:     &repo.ID,
 				Type:       "Commit",
 				ExternalID: *commit.SHA,
-				Points:     5, // Base points for commit
+				Points:     5, // Keep automatic for minor commits or adjust if needed
 				OccurredAt: commit.Commit.Author.GetDate().Time,
 				Metadata:   fmt.Sprintf(`{"message": %q, "author": %q}`, *commit.Commit.Message, author),
 			})
@@ -61,18 +75,4 @@ func (s *GitHubService) FetchRepoContributions(ctx context.Context, repo model.R
 	}
 
 	return contributions, nil
-}
-
-func (s *GitHubService) calculatePoints(labels []*gh.Label) int {
-	points := 10 // Base
-	for _, label := range labels {
-		name := strings.ToLower(*label.Name)
-		switch {
-		case strings.Contains(name, "hard"):
-			return 50
-		case strings.Contains(name, "medium"):
-			return 25
-		}
-	}
-	return points
 }

@@ -38,7 +38,9 @@ func (s *AnalyticsService) GetUserProgress(ctx context.Context, userID uuid.UUID
 	for _, c := range contributions {
 		totalPoints += c.Points
 		typeBreakdown[c.Type]++
-		repoBreakdown[c.RepoID] += c.Points
+		if c.RepoID != nil {
+			repoBreakdown[*c.RepoID] += c.Points
+		}
 	}
 
 	return map[string]interface{}{

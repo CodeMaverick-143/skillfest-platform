@@ -59,6 +59,11 @@ func (s *Server) updateUserPoints(c *gin.Context) {
 		Reason:   c.Query("reason"),
 	})
 
+	// Invalidate leaderboard cache
+	if s.cacheService != nil {
+		s.cacheService.Delete(c.Request.Context(), "leaderboard")
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Points updated successfully"})
 }
 
@@ -96,6 +101,11 @@ func (s *Server) updateUserStatus(c *gin.Context) {
 		NewValue: fmt.Sprintf("hidden:%v, banned:%v, admin:%v, reviewer:%v", input.IsHidden, input.IsBanned, input.IsAdmin, input.IsReviewer),
 		Reason:   c.Query("reason"),
 	})
+
+	// Invalidate leaderboard cache
+	if s.cacheService != nil {
+		s.cacheService.Delete(c.Request.Context(), "leaderboard")
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "User status updated successfully"})
 }
@@ -213,4 +223,51 @@ func (s *Server) getUserAnalytics(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, progress)
+}
+func (s *Server) authorizePR(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid PR ID"})
+		return
+	}
+
+	userVal, _ := c.Get("user")
+	admin := userVal.(*model.User)
+
+	if err := s.adminService.AuthorizePR(c.Request.Context(), id, admin.Username); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Invalidate leaderboard cache
+	if s.cacheService != nil {
+		s.cacheService.Delete(c.Request.Context(), "leaderboard")
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "PR authorized and points awarded"})
+}
+
+func (s *Server) rejectPR(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid PR ID"})
+		return
+	}
+
+	userVal, _ := c.Get("user")
+	admin := userVal.(*model.User)
+
+	if err := s.adminService.RejectPR(c.Request.Context(), id, admin.Username); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Invalidate leaderboard cache
+	if s.cacheService != nil {
+		s.cacheService.Delete(c.Request.Context(), "leaderboard")
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "PR rejected"})
 }

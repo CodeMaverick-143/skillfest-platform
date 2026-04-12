@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 	"github.com/google/uuid"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
@@ -9,21 +10,99 @@ import (
 )
 
 type AdminService struct {
-	fresherRepo repository.FresherRepository
-	userRepo    repository.UserRepository
+	fresherRepo      repository.FresherRepository
+	userRepo         repository.UserRepository
 	prRepo           repository.PRRepository
 	contributionRepo repository.ContributionRepository
 	repoRepo         repository.RepositoryRepository
+	pointsService    *PointsService
 }
 
-func NewAdminService(fresher repository.FresherRepository, user repository.UserRepository, pr repository.PRRepository, contributionRepo repository.ContributionRepository, repoRepo repository.RepositoryRepository) *AdminService {
+func NewAdminService(fresher repository.FresherRepository, user repository.UserRepository, pr repository.PRRepository, contributionRepo repository.ContributionRepository, repoRepo repository.RepositoryRepository, points *PointsService) *AdminService {
 	return &AdminService{
 		fresherRepo:      fresher,
 		userRepo:         user,
 		prRepo:           pr,
 		contributionRepo: contributionRepo,
 		repoRepo:         repoRepo,
+		pointsService:    points,
 	}
+}
+
+func (s *AdminService) AuthorizePR(ctx context.Context, prID uuid.UUID, adminUsername string) error {
+	allPrs, err := s.prRepo.ListAll(ctx) // This is inefficient but fits current repo interface
+	if err != nil {
+		return err
+	}
+	var targetPR *model.PullRequest
+	for i := range allPrs {
+		if allPrs[i].ID == prID {
+			targetPR = &allPrs[i]
+			break
+		}
+	}
+	if targetPR == nil {
+		return fmt.Errorf("PR not found")
+	}
+
+	targetPR.ReviewStatus = "approved"
+	targetPR.ReviewedBy = adminUsername
+	if err := s.prRepo.CreateOrUpdate(ctx, targetPR); err != nil {
+		return err
+	}
+
+	// Update corresponding contribution
+	// We need to find the repo first to get its ID
+	repos, _ := s.repoRepo.ListRepositories(ctx)
+	var repoID uuid.UUID
+	for _, r := range repos {
+		if targetPR.RepoName == r.Name || targetPR.RepoName == r.Owner+"/"+r.Name {
+			repoID = r.ID
+			break
+		}
+	}
+
+	occurredAt := time.Now()
+	if targetPR.MergedAt != nil {
+		occurredAt = *targetPR.MergedAt
+	}
+
+	// Contribution update logic
+	contribution := &model.Contribution{
+		UserID:     targetPR.UserID,
+		RepoID:     &repoID,
+		Type:       "PR",
+		ExternalID: fmt.Sprintf("%d", targetPR.PRNumber),
+		Points:     targetPR.Points, // awarding the points set during sync
+		OccurredAt: occurredAt,
+	}
+
+	if err := s.contributionRepo.CreateOrUpdate(ctx, contribution); err != nil {
+		return err
+	}
+
+	return s.pointsService.RecalculateUserLevel(ctx, targetPR.UserID)
+}
+
+func (s *AdminService) RejectPR(ctx context.Context, prID uuid.UUID, adminUsername string) error {
+	allPrs, err := s.prRepo.ListAll(ctx)
+	if err != nil {
+		return err
+	}
+	var targetPR *model.PullRequest
+	for i := range allPrs {
+		if allPrs[i].ID == prID {
+			targetPR = &allPrs[i]
+			break
+		}
+	}
+	if targetPR == nil {
+		return fmt.Errorf("PR not found")
+	}
+
+	targetPR.ReviewStatus = "rejected"
+	targetPR.ReviewedBy = adminUsername
+	return s.prRepo.CreateOrUpdate(ctx, targetPR)
 }
 
 func (s *AdminService) SubmitApplication(ctx context.Context, app *model.FresherApplication) error {
@@ -87,14 +166,40 @@ func (s *AdminService) ListUsers(ctx context.Context) ([]model.User, error) {
 }
 
 func (s *AdminService) UpdateUserPoints(ctx context.Context, userID uuid.UUID, points int) error {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	// 1. Get all current contributions to calculate the "automated" sum
+	contributions, err := s.contributionRepo.ListByUser(ctx, userID)
 	if err != nil {
 		return err
 	}
-	user.Points = points
-	user.Level = user.CalculateLevel()
-	user.LastScoreUpdatedAt = time.Now()
-	return s.userRepo.Update(ctx, user)
+
+	automatedPoints := 0
+	for _, c := range contributions {
+		if c.Type != "Manual Adjustment" {
+			automatedPoints += c.Points
+		}
+	}
+
+	// 2. Calculate the needed adjustment
+	adjustmentDelta := points - automatedPoints
+
+	// 3. Create or Update the manual adjustment contribution
+	// We use a deterministic ExternalID to allow updating the same adjustment
+	adj := &model.Contribution{
+		UserID:     userID,
+		RepoID:     nil, // Global adjustment
+		Type:       "Manual Adjustment",
+		ExternalID: fmt.Sprintf("manual-%s", userID.String()),
+		Points:     adjustmentDelta,
+		OccurredAt: time.Now(),
+		Metadata:   `{"reason": "Manual administrative point adjustment"}`,
+	}
+
+	if err := s.contributionRepo.CreateOrUpdate(ctx, adj); err != nil {
+		return err
+	}
+
+	// 4. Trigger a full recalculation to update the User record and level
+	return s.pointsService.RecalculateUserLevel(ctx, userID)
 }
 
 func (s *AdminService) UpdateUserStatus(ctx context.Context, userID uuid.UUID, isHidden bool, isBanned bool, isAdmin bool, isReviewer bool) error {
@@ -116,7 +221,7 @@ func (s *AdminService) ListMergedPRs(ctx context.Context) ([]model.PullRequest, 
 	}
 	
 	repos, _ := s.repoRepo.GetActiveRepositories(ctx)
-	var merged []model.PullRequest
+	merged := make([]model.PullRequest, 0)
 	for _, pr := range allPrs {
 		if pr.State != "merged" {
 			continue
@@ -124,9 +229,13 @@ func (s *AdminService) ListMergedPRs(ctx context.Context) ([]model.PullRequest, 
 
 		for _, repo := range repos {
 			if pr.RepoName == repo.Name || pr.RepoName == repo.Owner+"/"+repo.Name {
-				if pr.MergedAt != nil && pr.MergedAt.After(repo.StartDate) && pr.MergedAt.Before(repo.EndDate) {
-					merged = append(merged, pr)
-					break
+				if pr.MergedAt != nil {
+					validStart := repo.StartDate.IsZero() || pr.MergedAt.After(repo.StartDate) || pr.MergedAt.Equal(repo.StartDate)
+					validEnd := repo.EndDate.IsZero() || pr.MergedAt.Before(repo.EndDate) || pr.MergedAt.Equal(repo.EndDate)
+					if validStart && validEnd {
+						merged = append(merged, pr)
+						break
+					}
 				}
 			}
 		}

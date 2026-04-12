@@ -196,6 +196,8 @@ func (s *Server) setupRouter() {
 			admin.GET("/applications", s.listApplications)
 			admin.POST("/applications/:id/status", s.updateApplicationStatus)
 			admin.GET("/prs/merged", s.loggingMiddleware(), s.listMergedPRs)
+			admin.POST("/prs/:id/authorize", s.loggingMiddleware(), s.authorizePR)
+			admin.POST("/prs/:id/reject", s.loggingMiddleware(), s.rejectPR)
 			admin.GET("/logs", s.loggingMiddleware(), s.getAdminAuditLogs)
 			admin.GET("/sync-logs", s.loggingMiddleware(), s.getAdminSyncLogs)
 			admin.GET("/leaderboard-settings", s.loggingMiddleware(), s.handleLeaderboardSettings)
@@ -517,6 +519,11 @@ func (s *Server) updateUserRank(c *gin.Context) {
 	if err := s.userRepo.Update(c.Request.Context(), user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
 		return
+	}
+
+	// Invalidate leaderboard cache
+	if s.cacheService != nil {
+		s.cacheService.Delete(c.Request.Context(), "leaderboard")
 	}
 
 	c.Status(http.StatusOK)

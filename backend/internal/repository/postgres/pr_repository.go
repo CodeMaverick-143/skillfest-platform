@@ -19,7 +19,7 @@ func NewPostgresPRRepository(db *gorm.DB) *PostgresPRRepository {
 func (r *PostgresPRRepository) CreateOrUpdate(ctx context.Context, pr *model.PullRequest) error {
 	return r.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "repo_name"}, {Name: "pr_number"}},
-		DoUpdates: clause.AssignmentColumns([]string{"state", "title", "points", "merged_at"}),
+		DoUpdates: clause.AssignmentColumns([]string{"state", "title", "points", "merged_at", "review_status", "reviewed_by"}),
 	}).Create(pr).Error
 }
 

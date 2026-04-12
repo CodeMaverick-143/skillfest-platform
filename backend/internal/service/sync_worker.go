@@ -139,15 +139,16 @@ func (w *SyncWorker) SyncAllRepos(ctx context.Context) {
 					}
 
 					pr := &model.PullRequest{
-						UserID:    user.ID,
-						RepoName:  repo.Owner + "/" + repo.Name,
-						PRNumber:  prNumber,
-						Title:     title,
-						URL:       fmt.Sprintf("https://github.com/%s/%s/pull/%d", repo.Owner, repo.Name, prNumber),
-						State:     "merged",
-						Points:    c.Points,
-						MergedAt:  &c.OccurredAt,
-						CreatedAt: c.OccurredAt,
+						UserID:       user.ID,
+						RepoName:     repo.Owner + "/" + repo.Name,
+						PRNumber:     prNumber,
+						Title:        title,
+						URL:          fmt.Sprintf("https://github.com/%s/%s/pull/%d", repo.Owner, repo.Name, prNumber),
+						State:        "merged",
+						ReviewStatus: "pending",
+						Points:       repo.PointsPerPR, // Set target points for review display
+						MergedAt:     &c.OccurredAt,
+						CreatedAt:    c.OccurredAt,
 					}
 					w.prRepo.CreateOrUpdate(ctx, pr)
 				}

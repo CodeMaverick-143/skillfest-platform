@@ -14,7 +14,7 @@ import (
 
 func NewDBPool(ctx context.Context, cfg *config.Config) (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{
-		PrepareStmt:            true,
+		PrepareStmt:            false,
 		SkipDefaultTransaction: true,
 		Logger:                 logger.Default.LogMode(logger.Warn), // Only log warnings/errors to reduce noise
 	})

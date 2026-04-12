@@ -58,19 +58,21 @@ func (u *User) CalculateLevel() string {
 }
 
 type PullRequest struct {
-	ID          uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	UserID      uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
-	RepoName    string     `gorm:"uniqueIndex:idx_repo_pr;not null" json:"repo_name"`
-	PRNumber    int        `gorm:"uniqueIndex:idx_repo_pr;not null" json:"pr_number"`
-	Title       string     `json:"title"`
-	URL         string     `gorm:"uniqueIndex;not null" json:"url"`
-	State       string     `gorm:"not null" json:"state"`
-	Difficulty  string     `json:"difficulty"`
-	Labels      string     `json:"labels"` // Comma-separated labels
-	IsOrg       bool       `gorm:"default:false" json:"is_org"`
-	Points      int        `gorm:"default:0" json:"points"`
-	CreatedAt   time.Time  `gorm:"default:CURRENT_TIMESTAMP;index" json:"created_at"`
-	MergedAt    *time.Time `gorm:"index" json:"merged_at,omitempty"`
+	ID           uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	UserID       uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
+	RepoName     string     `gorm:"uniqueIndex:idx_repo_pr;not null" json:"repo_name"`
+	PRNumber     int        `gorm:"uniqueIndex:idx_repo_pr;not null" json:"pr_number"`
+	Title        string     `json:"title"`
+	URL          string     `gorm:"uniqueIndex;not null" json:"url"`
+	State        string     `gorm:"not null" json:"state"` // merged, open, closed
+	ReviewStatus string     `gorm:"default:'pending';index" json:"review_status"` // pending, approved, rejected
+	ReviewedBy   string     `json:"reviewed_by"` // Admin username
+	Difficulty   string     `json:"difficulty"`
+	Labels       string     `json:"labels"` // Comma-separated labels
+	IsOrg        bool       `gorm:"default:false" json:"is_org"`
+	Points       int        `gorm:"default:0" json:"points"`
+	CreatedAt    time.Time  `gorm:"default:CURRENT_TIMESTAMP;index" json:"created_at"`
+	MergedAt     *time.Time `gorm:"index" json:"merged_at,omitempty"`
 }
 
 type FresherApplication struct {
@@ -101,10 +103,10 @@ type Repository struct {
 type Contribution struct {
 	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	UserID      uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
-	RepoID      uuid.UUID `gorm:"type:uuid;not null;index" json:"repo_id"`
+	RepoID      *uuid.UUID `gorm:"type:uuid;index;uniqueIndex:idx_repo_type_ext" json:"repo_id"`
 	EventID     uint      `gorm:"index;not null;default:1" json:"event_id"` // Tied to EventConfig ID
-	Type        string    `json:"type"` // PR, Commit, Issue, Merge, Reversal
-	ExternalID  string    `gorm:"uniqueIndex:idx_cont_ext;not null" json:"external_id"` // PR number, commit SHA, etc.
+	Type        string    `gorm:"uniqueIndex:idx_repo_type_ext" json:"type"` // PR, Commit, Issue, Merge, Reversal
+	ExternalID  string    `gorm:"uniqueIndex:idx_repo_type_ext;not null" json:"external_id"` // PR number, commit SHA, etc.
 	Points      int       `json:"points"`
 	OccurredAt  time.Time `gorm:"index" json:"occurred_at"`
 	Metadata    string    `gorm:"type:text" json:"metadata"` // JSON string
