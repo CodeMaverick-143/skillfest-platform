@@ -70,3 +70,22 @@ func (r *PostgresRepoRepository) UpdateAttemptStatus(ctx context.Context, id uui
 func (r *PostgresRepoRepository) UpdateRepository(ctx context.Context, repo *model.Repository) error {
 	return r.db.WithContext(ctx).Save(repo).Error
 }
+
+func (r *PostgresRepoRepository) GetParticipatingRepositories(ctx context.Context) ([]model.RepositoryStats, error) {
+	var stats []model.RepositoryStats
+	
+	// Join repositories with contributions to get aggregated stats
+	// We only show active repositories
+	// The user requested to filter out repositories "lacking valid contribution data" 
+	// (HAVING count(contributions.id) > 0)
+	err := r.db.WithContext(ctx).
+		Table("repositories").
+		Select("repositories.id, repositories.owner, repositories.name, repositories.url, repositories.org_name, repositories.description, repositories.stars_count, count(contributions.id) as contribution_count, coalesce(sum(contributions.points), 0) as total_points").
+		Joins("LEFT JOIN contributions ON repositories.id = contributions.repo_id").
+		Where("repositories.is_active = ?", true).
+		Group("repositories.id").
+		Order("repositories.name asc").
+		Scan(&stats).Error
+		
+	return stats, err
+}

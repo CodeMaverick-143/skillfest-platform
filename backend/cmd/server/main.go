@@ -89,6 +89,8 @@ func main() {
 
 	// 4. Start Background Worker
 	syncWorker := service.NewSyncWorker(userRepo, ghService, contributionRepo, repoRepo, prRepo, pointsService, logger, pool)
+	// Trigger initial sync in a goroutine so it doesn't block startup
+	go syncWorker.SyncAllRepos(ctx)
 	go syncWorker.Start(ctx, 30*time.Minute)
 
 	// 5. Setup Server — pass pool so event handlers can access EventConfig

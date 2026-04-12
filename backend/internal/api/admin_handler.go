@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 
 	"fmt"
@@ -153,6 +154,10 @@ func (s *Server) addRepository(c *gin.Context) {
 	if s.cacheService != nil {
 		s.cacheService.Delete(c.Request.Context(), "active_repos")
 	}
+
+	// Trigger immediate metadata sync
+	go s.syncWorker.SyncRepoMetadata(context.Background(), repo.ID)
+
 	c.JSON(http.StatusCreated, repo)
 }
 
@@ -207,6 +212,10 @@ func (s *Server) updateRepository(c *gin.Context) {
 	if s.cacheService != nil {
 		s.cacheService.Delete(c.Request.Context(), "active_repos")
 	}
+
+	// Trigger immediate metadata sync
+	go s.syncWorker.SyncRepoMetadata(context.Background(), repo.ID)
+
 	c.JSON(http.StatusOK, repo)
 }
 
@@ -270,4 +279,21 @@ func (s *Server) rejectPR(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "PR rejected"})
+}
+
+func (s *Server) authorizeAllPRs(c *gin.Context) {
+	userVal, _ := c.Get("user")
+	admin := userVal.(*model.User)
+
+	if err := s.adminService.AuthorizeAllPRs(c.Request.Context(), admin.Username); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Invalidate leaderboard cache
+	if s.cacheService != nil {
+		s.cacheService.Delete(c.Request.Context(), "leaderboard")
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "All pending PRs authorized"})
 }

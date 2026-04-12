@@ -51,3 +51,8 @@ func (c *Client) ListRepoCommits(ctx context.Context, owner, repo string, since,
 	commits, _, err := c.GhClient.Repositories.ListCommits(ctx, owner, repo, opts)
 	return commits, err
 }
+
+func (c *Client) GetRepository(ctx context.Context, owner, repo string) (*github.Repository, error) {
+	repository, _, err := c.GhClient.Repositories.Get(ctx, owner, repo)
+	return repository, err
+}

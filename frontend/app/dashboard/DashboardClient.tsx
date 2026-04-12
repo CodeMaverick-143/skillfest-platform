@@ -20,17 +20,18 @@ export default function DashboardClient() {
   });
 
   useEffect(() => {
-    if (user && user.username) {
-      fetch(getApiUrl(`/api/profile/${user.username}`))
+    if (user?.username) {
+      fetch(getApiUrl(`/api/profile/${user.username}`), { credentials: 'include' })
         .then(res => res.json())
         .then(data => {
           if (data && data.user) {
+            const prList = data.prs || data.pull_requests || [];
             setStats({
               points: data.user.points || 0,
               level: data.user.level || "Newcomer",
-              streak: 0, // Mock for now
-              completedChallenges: data.pull_requests ? data.pull_requests.length : 0,
-              pullRequests: data.pull_requests || []
+              streak: data.streak || 0,
+              completedChallenges: data.tasks_completed || 0,
+              pullRequests: prList
             });
           }
         })
@@ -116,9 +117,9 @@ export default function DashboardClient() {
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+        <div className="grid grid-cols-1 gap-8">
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <div className="bg-[#F5F2EA] border border-[#EBE6DF] p-6 md:p-8 hover:border-[#D6D0C4] transition-colors shadow-sm rounded-lg">
               <Star className="w-5 h-5 text-[#8C867E] mb-6" />
               <p className="text-[9px] uppercase font-bold text-[#6B6661] tracking-widest mb-2">Total Points</p>
@@ -145,31 +146,6 @@ export default function DashboardClient() {
               )}
             </div>
           </div>
-
-          {/* Event Timeline */}
-          <div className="bg-[#F5F2EA] border border-[#EBE6DF] p-8 shadow-sm rounded-lg">
-            <h3 className="text-sm font-bold flex items-center gap-3 text-[#1A1A1A] uppercase tracking-widest mb-8 pb-4 border-b border-[#EBE6DF]">
-              <Clock className="w-4 h-4 text-[#8C867E]" /> Event Timeline
-            </h3>
-            <div className="space-y-8">
-              {[
-                "March 30: Registration Phase and Onboarding.",
-                "April 1-4: Contribution Phase active.",
-                "April 5: Final Evaluation of PRs.",
-                "Results published on the final leaderboard."
-              ].map((item: string, i: number) => (
-                <div key={i} className="flex gap-4 relative">
-                  {i !== 3 && (
-                    <div className="w-[1px] h-full bg-[#EBE6DF] absolute left-[3.5px] top-4" />
-                  )}
-                  <div className="w-2 h-2 mt-1.5 rounded-full bg-[#1A1A1A] relative z-10" />
-                  <p className="text-[13px] font-sans text-[#6B6661] flex-1 leading-relaxed">
-                    {item}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* PR Analytics */}
@@ -184,7 +160,17 @@ export default function DashboardClient() {
                   <div className={`w-1.5 h-1.5 rounded-full ${pr.state === 'Merged' || pr.state === 'merged' ? 'bg-[#27c93f]' : pr.state === 'Closed' || pr.state === 'closed' ? 'bg-[#ff5f56]' : 'bg-[#eab308]'}`} />
                   <div>
                     <p className="font-bold text-[13px] font-sans text-[#1A1A1A]">{pr.title}</p>
-                    <p className="text-[10px] font-bold text-[#8C867E] mt-1.5 uppercase tracking-widest">{pr.repo_name}</p>
+                    <div className="flex items-center gap-3 mt-1.5">
+                      <p className="text-[10px] font-bold text-[#8C867E] uppercase tracking-widest">{pr.repo_name}</p>
+                      <div className="w-1 h-1 rounded-full bg-[#EBE6DF]" />
+                      <span className={`text-[9px] font-bold uppercase tracking-tight px-1.5 py-0.5 rounded border ${
+                        pr.review_status === 'approved' ? 'bg-[#27c93f]/10 text-[#27c93f] border-[#27c93f]/20' : 
+                        pr.review_status === 'rejected' ? 'bg-[#ff5f56]/10 text-[#ff5f56] border-[#ff5f56]/20' : 
+                        'bg-[#eab308]/10 text-[#eab308] border-[#eab308]/20'
+                      }`}>
+                        {pr.review_status === 'approved' ? 'Accepted' : pr.review_status === 'rejected' ? 'Rejected' : 'Review Pending'}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <a href={pr.url} target="_blank" className="p-2 text-[#A39D96] group-hover:text-[#1A1A1A] transition-colors">

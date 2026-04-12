@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/repository"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -87,6 +89,21 @@ func (w *SyncWorker) SyncAllRepos(ctx context.Context) {
 	processedCount := 0
 	for _, repo := range repos {
 		log.Printf("Syncing activities for %s/%s", repo.Owner, repo.Name)
+		
+		// Refresh Repo Metadata (Stars, Description, and Casing)
+		sanitizedName := strings.TrimSuffix(repo.Name, ".git")
+		if ghRepo, err := w.githubService.GetClient().GetRepository(ctx, repo.Owner, sanitizedName); err == nil {
+			repo.StarsCount = ghRepo.GetStargazersCount()
+			// Correct casing from GitHub
+			repo.Owner = ghRepo.GetOwner().GetLogin()
+			repo.Name = ghRepo.GetName()
+
+			if repo.Description == "" && ghRepo.GetDescription() != "" {
+				repo.Description = ghRepo.GetDescription()
+			}
+			w.repoRepo.UpdateRepository(ctx, &repo)
+		}
+
 		contributions, err := w.githubService.FetchRepoContributions(ctx, repo)
 		if err != nil {
 			log.Printf("Error fetching contributions for %s: %v", repo.Name, err)
@@ -168,4 +185,26 @@ func (w *SyncWorker) SyncAllRepos(ctx context.Context) {
 	syncLog.EndedAt = time.Now()
 	w.loggingService.LogSyncOperation(ctx, syncLog)
 	log.Printf("Global sync job completed. Processed %d entries.", processedCount)
+}
+
+func (w *SyncWorker) SyncRepoMetadata(ctx context.Context, repoID uuid.UUID) error {
+	repo, err := w.repoRepo.GetRepositoryByID(ctx, repoID)
+	if err != nil {
+		return err
+	}
+
+	sanitizedName := strings.TrimSuffix(repo.Name, ".git")
+	ghRepo, err := w.githubService.GetClient().GetRepository(ctx, repo.Owner, sanitizedName)
+	if err != nil {
+		return fmt.Errorf("failed to fetch from GitHub (repo: %s/%s): %v", repo.Owner, sanitizedName, err)
+	}
+
+	repo.StarsCount = ghRepo.GetStargazersCount()
+	repo.Owner = ghRepo.GetOwner().GetLogin()
+	repo.Name = ghRepo.GetName()
+	if ghRepo.GetDescription() != "" {
+		repo.Description = ghRepo.GetDescription()
+	}
+
+	return w.repoRepo.UpdateRepository(ctx, repo)
 }

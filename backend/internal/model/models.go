@@ -97,7 +97,21 @@ type Repository struct {
 	EndDate     time.Time `json:"end_date"`
 	IsActive    bool      `gorm:"default:true;index" json:"is_active"`
 	PointsPerPR int       `gorm:"default:25" json:"points_per_pr"` // Points awarded for a merged pull request
+	Description string    `json:"description"`
+	StarsCount  int       `gorm:"default:0" json:"stars_count"`
 	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP;index" json:"created_at"`
+}
+
+type RepositoryStats struct {
+	ID                uuid.UUID `json:"id"`
+	Owner             string    `json:"owner"`
+	Name              string    `json:"name"`
+	URL               string    `json:"url"`
+	OrgName           string    `json:"org_name"`
+	Description       string    `json:"description"`
+	StarsCount        int       `json:"stars_count"`
+	ContributionCount int       `json:"contribution_count"`
+	TotalPoints       int       `json:"total_points"`
 }
 
 type Contribution struct {

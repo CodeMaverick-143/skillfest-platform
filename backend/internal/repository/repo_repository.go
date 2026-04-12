@@ -13,6 +13,7 @@ type RepositoryRepository interface {
 	GetActiveRepositories(ctx context.Context) ([]model.Repository, error)
 	GetRepositoryByID(ctx context.Context, id uuid.UUID) (*model.Repository, error)
 	UpdateRepository(ctx context.Context, repo *model.Repository) error
+	GetParticipatingRepositories(ctx context.Context) ([]model.RepositoryStats, error)
 	
 	CreateAttempt(ctx context.Context, attempt *model.IssueAttempt) error
 	GetUserAttempts(ctx context.Context, userID uuid.UUID) ([]model.IssueAttempt, error)

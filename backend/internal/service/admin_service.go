@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 	"github.com/google/uuid"
 	"github.com/CodeMaverick-143/skillfest-platform/backend/internal/model"
@@ -56,7 +57,10 @@ func (s *AdminService) AuthorizePR(ctx context.Context, prID uuid.UUID, adminUse
 	repos, _ := s.repoRepo.ListRepositories(ctx)
 	var repoID uuid.UUID
 	for _, r := range repos {
-		if targetPR.RepoName == r.Name || targetPR.RepoName == r.Owner+"/"+r.Name {
+		targetLower := strings.ToLower(targetPR.RepoName)
+		repoNameLower := strings.ToLower(r.Name)
+		repoFullLower := strings.ToLower(r.Owner + "/" + r.Name)
+		if targetLower == repoNameLower || targetLower == repoFullLower {
 			repoID = r.ID
 			break
 		}
@@ -103,6 +107,23 @@ func (s *AdminService) RejectPR(ctx context.Context, prID uuid.UUID, adminUserna
 	targetPR.ReviewStatus = "rejected"
 	targetPR.ReviewedBy = adminUsername
 	return s.prRepo.CreateOrUpdate(ctx, targetPR)
+}
+
+func (s *AdminService) AuthorizeAllPRs(ctx context.Context, adminUsername string) error {
+	prs, err := s.ListMergedPRs(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, pr := range prs {
+		if pr.ReviewStatus == "pending" || pr.ReviewStatus == "" {
+			if err := s.AuthorizePR(ctx, pr.ID, adminUsername); err != nil {
+				// We log and continue so one failure doesn't block all
+				fmt.Printf("Error authorizing PR %s: %v\n", pr.ID, err)
+			}
+		}
+	}
+	return nil
 }
 
 func (s *AdminService) SubmitApplication(ctx context.Context, app *model.FresherApplication) error {

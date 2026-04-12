@@ -197,6 +197,7 @@ func (s *Server) setupRouter() {
 			admin.POST("/applications/:id/status", s.updateApplicationStatus)
 			admin.GET("/prs/merged", s.loggingMiddleware(), s.listMergedPRs)
 			admin.POST("/prs/:id/authorize", s.loggingMiddleware(), s.authorizePR)
+			admin.POST("/prs/authorize-all", s.loggingMiddleware(), s.authorizeAllPRs)
 			admin.POST("/prs/:id/reject", s.loggingMiddleware(), s.rejectPR)
 			admin.GET("/logs", s.loggingMiddleware(), s.getAdminAuditLogs)
 			admin.GET("/sync-logs", s.loggingMiddleware(), s.getAdminSyncLogs)
@@ -231,6 +232,7 @@ func (s *Server) setupRouter() {
 
 		// Public event status — used by frontend to check if event is open
 		api.GET("/event/status", s.getEventStatus)
+		api.GET("/participating-repositories", s.getParticipatingRepositories)
 
 		// Admin event lifecycle control
 		admin.POST("/event/close", s.closeEvent)
@@ -593,9 +595,18 @@ func (s *Server) getUserProfile(c *gin.Context) {
 
 	// RBAC: Only admin or the owner can see the detailed contribution history
 	canSeeDetails := false
-	requesterVal, exists := c.Get("user")
-	if exists {
-		requester := requesterVal.(*model.User)
+	
+	// Attempt to get user from token manually since this is a public route
+	var requester *model.User
+	tokenString, err := c.Cookie("skillfest_token")
+	if err == nil {
+		userID, vErr := s.authService.ValidateSession(tokenString)
+		if vErr == nil {
+			requester, _ = s.userRepo.GetByID(c.Request.Context(), userID)
+		}
+	}
+
+	if requester != nil {
 		if requester.IsAdmin || requester.ID == user.ID {
 			canSeeDetails = true
 		}
@@ -606,6 +617,44 @@ func (s *Server) getUserProfile(c *gin.Context) {
 		filteredPRs, err = s.prRepo.GetFilteredByUser(c.Request.Context(), user.ID)
 		if err != nil {
 			filteredPRs = []model.PullRequest{}
+		}
+	}
+
+	// Calculate tasks completed (merged count)
+	tasksCompleted := 0
+	for _, pr := range filteredPRs {
+		if pr.State == "merged" {
+			tasksCompleted++
+		}
+	}
+
+	// Calculate live streak based on merged_at dates
+	streak := 0
+	if len(filteredPRs) > 0 {
+		activityDays := make(map[string]bool)
+		for _, pr := range filteredPRs {
+			if pr.MergedAt != nil {
+				activityDays[pr.MergedAt.Format("2006-01-02")] = true
+			}
+		}
+
+		if len(activityDays) > 0 {
+			now := time.Now()
+			current := now
+			for {
+				dayStr := current.Format("2006-01-02")
+				if activityDays[dayStr] {
+					streak++
+					current = current.AddDate(0, 0, -1)
+				} else {
+					// Check if they just missed today but it's not over yet
+					if dayStr == now.Format("2006-01-02") {
+						current = current.AddDate(0, 0, -1)
+						continue
+					}
+					break
+				}
+			}
 		}
 	}
 
@@ -620,10 +669,12 @@ func (s *Server) getUserProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"user":          user,
-		"pull_requests": filteredPRs,
-		"rank":          rank,
+		"user":            user,
+		"pull_requests":   filteredPRs,
+		"rank":            rank,
 		"can_see_details": canSeeDetails,
+		"streak":          streak,
+		"tasks_completed": tasksCompleted,
 	})
 }
 
@@ -1051,4 +1102,13 @@ func (s *Server) verifyAdminStatus(username string) bool {
 	}
 
 	return false
+}
+
+func (s *Server) getParticipatingRepositories(c *gin.Context) {
+	repos, err := s.repoRepo.GetParticipatingRepositories(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch participating repositories"})
+		return
+	}
+	c.JSON(http.StatusOK, repos)
 }
