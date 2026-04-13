@@ -129,7 +129,8 @@ func (s *Server) setupRouter() {
 	s.router.Use(cors.New(cors.Config{
 		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With", "CF-Connecting-IP"},
+		AllowHeaders:     []string{"Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With", "CF-Connecting-IP", "Cache-Control", "Pragma", "Expires", "Last-Modified", "If-Modified-Since"},
+		ExposeHeaders:    []string{"Content-Length", "Access-Control-Allow-Origin", "Access-Control-Allow-Headers", "Cache-Control", "Content-Language", "Content-Type"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
@@ -1042,11 +1043,21 @@ func (s *Server) healthCheck(c *gin.Context) {
 
 func (s *Server) securityHeadersMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Skip security headers for preflight requests to avoid interference
+		if c.Request.Method == "OPTIONS" {
+			c.Next()
+			return
+		}
+
 		c.Header("X-Frame-Options", "DENY")
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
-		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://avatars.githubusercontent.com; connect-src 'self' "+s.cfg.BackendURL)
+		
+		// Content-Security-Policy for API responses
+		// We use a more permissive connect-src for APIs to avoid blocking valid cross-origin requests
+		csp := fmt.Sprintf("default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://avatars.githubusercontent.com; connect-src 'self' %s https://*.nstsdc.org", s.cfg.BackendURL)
+		c.Header("Content-Security-Policy", csp)
 		
 		if c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https" {
 			c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
