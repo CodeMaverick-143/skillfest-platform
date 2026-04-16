@@ -17,6 +17,7 @@ export default function RulesPage() {
     { id: "scoring", label: "03", title: "Scoring" },
     { id: "conduct", label: "04", title: "Conduct" },
     { id: "disqualification", label: "05", title: "Disqualification" },
+    { id: "aipolicy", label: "06", title: "AI Usage Policy" },
   ];
 
   return (
@@ -353,7 +354,6 @@ export default function RulesPage() {
                 </ul>
               </div>
 
-              {/* Warning Callout */}
               <div className="flex items-start gap-4 p-6 rounded-2xl bg-[#F5F2EA] border border-[#EBE6DF] shadow-sm">
                 <div className="p-2 rounded-xl bg-[#FDFBF7] border border-[#EBE6DF] flex-shrink-0">
                   <AlertTriangle className="w-4 h-4 text-[#8C867E]" />
@@ -362,6 +362,76 @@ export default function RulesPage() {
                   NST-SDC reserves the right to modify, suspend, or terminate the event at any time. Any updates to these rules will be communicated via the official event page and{' '}
                   <a href="mailto:support@nstsdc.org" className="block mt-1 font-black text-[#1A1A1A] hover:text-[#6B6661] transition-colors">support@nstsdc.org</a>.
                 </p>
+              </div>
+            </motion.div>
+
+            {/* Section 06 — AI Usage Policy */}
+            <motion.div
+              id="aipolicy"
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+              className="space-y-6 scroll-mt-32 pb-20"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-[#1A1A1A] text-white border border-transparent flex-shrink-0">
+                  <ScrollText className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase bg-black text-white mb-1">Section 06</span>
+                  <h2 className="text-xl md:text-2xl font-black font-sans tracking-tight text-[#1A1A1A]">AI Usage Policy</h2>
+                </div>
+              </div>
+
+              <div className="p-8 rounded-[32px] bg-red-50 border-2 border-red-100 space-y-6">
+                <div className="flex items-center gap-3 text-red-600">
+                  <AlertTriangle className="w-6 h-6" />
+                  <h3 className="text-lg font-black tracking-tight">STRICT ENFORCEMENT ZONE</h3>
+                </div>
+                <p className="text-sm text-red-900/80 leading-relaxed font-bold">
+                  To ensure meaningful learning, the following rules regarding AI tools are strictly enforced. Misuse of AI undermines your growth and harms your reputation.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    { t: "Understanding Over Submission", d: "You must fully understand any code you submit and be able to explain every line if asked by a maintainer." },
+                    { t: "Responsible Use", d: "Blindly copying AI output is prohibited. You must review, modify, and justify how it integrates." },
+                    { t: "Review Accountability", d: "During PR reviews, you may be asked for a step-by-step walkthrough. Failure = AI misuse." },
+                    { t: "Quality Focus", d: "Spammy or low-quality AI generated PRs will negatively impact your standing immediately." }
+                  ].map((item, idx) => (
+                    <div key={idx} className="p-5 rounded-2xl bg-white/60 border border-red-200/50">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-red-900 mb-2">{item.t}</h4>
+                      <p className="text-xs text-red-900/70 leading-relaxed font-medium">{item.d}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border-2 border-black bg-black text-white p-8 space-y-6 shadow-2xl">
+                <h4 className="text-xl font-black tracking-tight flex items-center gap-3">
+                   <AlertTriangle className="w-6 h-6 text-red-500" />
+                   CONSEQUENCES OF BLIND USAGE
+                </h4>
+                <div className="space-y-4 text-sm text-white/80 leading-relaxed">
+                  <p><span className="text-white font-black underline">Public Accountability:</span> Maintainers may publicly call out behavior on PRs, Issues, or Slack channels.</p>
+                  <p><span className="text-white font-black underline">Reputation Impact:</span> Your future contributions may be auto-rejected and your credibility voided.</p>
+                  <p><span className="text-white font-black underline">University-Level Action:</span> Repeated misuse will be escalated to faculty for disciplinary tasks or penalties.</p>
+                </div>
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 italic text-[11px] text-white/60">
+                  &quot;Do you even understand what you&apos;re submitting? Please go tell your schoolmates to stop spamming shitty PRs on GitHub.&quot; — Actual Maintainer Response to AI Spam
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-[#EBE6DF] bg-[#FDFBF7] shadow-sm overflow-hidden divide-y divide-[#EBE6DF]">
+                <div className="flex items-start gap-4 px-6 py-5 hover:bg-[#F5F2EA] transition-colors">
+                  <span className="text-xs font-black text-[#8C867E] tracking-widest mt-0.5 flex-shrink-0">6.1</span>
+                  <p className="text-sm text-[#6B6661] leading-relaxed">Treat open-source contributions as professional work. Maintain honesty and originality.</p>
+                </div>
+                <div className="flex items-start gap-4 px-6 py-5 hover:bg-[#F5F2EA] transition-colors">
+                  <span className="text-xs font-black text-[#8C867E] tracking-widest mt-0.5 flex-shrink-0">6.2</span>
+                  <p className="text-sm text-[#6B6661] leading-relaxed">Skillfest is for growth, not shortcuts. Use documentation and mentors instead of relying passively on AI.</p>
+                </div>
               </div>
             </motion.div>
           </div>
