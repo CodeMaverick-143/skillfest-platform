@@ -50,8 +50,12 @@ export function Footer() {
           <div className="col-span-1">
             <h4 className="text-[10px] font-bold text-[#1A1A1A] uppercase tracking-widest mb-6">Resources</h4>
             <ul className="space-y-4 text-xs text-[#6B6661]">
-              <li className="flex items-center gap-2 group"><span className="text-[#C4BFAF] group-hover:text-[#1A1A1A] transition-colors">&gt;</span><Link href="#" className="hover:text-[#1A1A1A] transition-colors inline-flex items-center gap-2">GitHub Repo <ArrowUpRight className="w-3 h-3 text-[#A39D96]" /></Link></li>
-              <li className="flex items-center gap-2 group"><span className="text-[#C4BFAF] group-hover:text-[#1A1A1A] transition-colors">&gt;</span><Link href="#" className="hover:text-[#1A1A1A] transition-colors inline-flex items-center gap-2">Documentation</Link></li>
+              <li className="flex items-center gap-2 group">
+                <span className="text-[#C4BFAF] group-hover:text-[#1A1A1A] transition-colors">&gt;</span>
+                <Link href="https://github.com/orgs/nst-sdc" target="_blank" className="hover:text-[#1A1A1A] transition-colors inline-flex items-center gap-2">
+                  GitHub Organization <ArrowUpRight className="w-3 h-3 text-[#A39D96]" />
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
