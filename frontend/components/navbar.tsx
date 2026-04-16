@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
-import { Github, Code, LogOut, Layers, Menu, X, ChevronRight, BarChart3, Info, Zap, Clock, ScrollText } from "lucide-react";
+import { Github, Code, LogOut, Layers, Menu, X, ChevronRight, BarChart3, Info, Zap, Clock, ScrollText, Trophy } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getApiUrl } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
@@ -70,6 +70,8 @@ export function Navbar() {
     { name: "Leaderboard", href: "/leaderboard", icon: BarChart3 },
     { name: "Docs", href: "/docs", icon: Info },
     { name: "Fresher Track", href: "/fresher-application", icon: Zap },
+    { name: "Contributors", href: "/contributors", icon: Trophy },
+    { name: "Rules", href: "/rules", icon: ScrollText },
   ];
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);

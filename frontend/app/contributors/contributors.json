@@ -1,0 +1,44 @@
+[
+    {
+        "id": "1",
+        "name": "Kanishk",
+        "projects": [
+            "Electron",
+            "Chromium"
+        ],
+        "github": "https://github.com/KanishkRanjan"
+    },
+    {
+        "id": "2",
+        "name": "Kartik",
+        "projects": [
+            "Sugar Labs"
+        ],
+        "github": "https://github.com/kartikktripathi"
+    },
+    {
+        "id": "3",
+        "name": "Padam",
+        "projects": [
+            "SymPy",
+            "GoFr",
+            "Hermeto"
+        ],
+        "github": "https://github.com/IronwallxR5"
+    },
+    {
+        "id": "4",
+        "name": "Sameer",
+        "projects": [
+            "AsyncAPI",
+            "GoFr",
+            "M-Lab",
+            "Hermeto",
+            "Learning Unlimited",
+            "Microsoft",
+            "Kubernetes SIGs",
+            "DrawDB"
+        ],
+        "github": "https://github.com/sammy200-ui"
+    }
+]
